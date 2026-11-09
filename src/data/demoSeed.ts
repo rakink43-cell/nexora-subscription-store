@@ -1,0 +1,345 @@
+/* ---------------------------------------------------------------------------
+   Demo catalogue — mirrors supabase/migrations/0007_seed_data.sql so the app
+   is fully explorable before Supabase credentials exist.
+   The real storefront always reads from PostgreSQL; this file is only used by
+   the offline demo backend (`lib/demoBackend.ts`).
+--------------------------------------------------------------------------- */
+import type {
+  Category,
+  Faq,
+  PaymentMethodConfig,
+  Product,
+  Promotion,
+  Review,
+} from '../types'
+
+const cat = (slug: string) => slug
+
+export const demoCategories: Category[] = [
+  {
+    id: 'cat-ott',
+    name: 'OTT Subscriptions',
+    slug: cat('ott-subscriptions'),
+    description: 'Netflix, Prime Video, Disney+, Hoichoi and more — premium streaming at local prices.',
+    icon: 'Clapperboard',
+    image_url: null,
+    accent: 'red',
+    sort_order: 1,
+    is_active: true,
+  },
+  {
+    id: 'cat-ai',
+    name: 'AI Premium Tools',
+    slug: cat('ai-premium-tools'),
+    description: 'ChatGPT Plus, Claude Pro, Gemini Advanced, Perplexity and creative AI suites.',
+    icon: 'BrainCircuit',
+    image_url: null,
+    accent: 'blue',
+    sort_order: 2,
+    is_active: true,
+  },
+  {
+    id: 'cat-edu',
+    name: 'Educational Subscriptions',
+    slug: cat('educational-subscriptions'),
+    description: 'Coursera, Udemy, Skillshare and language learning to level up your career.',
+    icon: 'GraduationCap',
+    image_url: null,
+    accent: 'blue',
+    sort_order: 3,
+    is_active: true,
+  },
+  {
+    id: 'cat-soft',
+    name: 'Software & Productivity',
+    slug: cat('software-productivity'),
+    description: 'Microsoft 365, Canva Pro, Adobe, Notion and the tools that get work done.',
+    icon: 'Layers',
+    image_url: null,
+    accent: 'blue',
+    sort_order: 4,
+    is_active: true,
+  },
+  {
+    id: 'cat-game',
+    name: 'Gaming & Entertainment',
+    slug: cat('gaming-entertainment'),
+    description: 'PlayStation Plus, Xbox Game Pass, Spotify and everything fun.',
+    icon: 'Gamepad2',
+    image_url: null,
+    accent: 'red',
+    sort_order: 5,
+    is_active: true,
+  },
+  {
+    id: 'cat-design',
+    name: 'Design & Creative',
+    slug: cat('design-creative'),
+    description: 'Figma, Envato Elements, Midjourney and premium creative assets.',
+    icon: 'Palette',
+    image_url: null,
+    accent: 'blue',
+    sort_order: 6,
+    is_active: true,
+  },
+]
+
+type Seed = [
+  categoryId: string,
+  name: string,
+  slug: string,
+  brand: string,
+  short: string,
+  duration: string,
+  original: number,
+  discounted: number,
+  availability: Product['availability'],
+  featured: boolean,
+  badge: string | null,
+  rating: number,
+  reviews: number,
+  sales: number,
+  delivery: string,
+]
+
+const seeds: Seed[] = [
+  ['cat-ott', 'Netflix Premium 4K', 'netflix-premium-4k', 'Netflix', 'Private 4K Ultra HD profile with your own PIN — works on TV, phone and laptop.', '1 Month', 650, 390, 'in_stock', true, 'Best Seller', 4.9, 1284, 2140, 'Within 10–30 minutes'],
+  ['cat-ott', 'Netflix Premium 4K — 3 Months', 'netflix-premium-4k-3-months', 'Netflix', 'Three months of private 4K Netflix at the best per-month price.', '3 Months', 1800, 1050, 'in_stock', true, 'Save 42%', 4.8, 642, 980, 'Within 10–30 minutes'],
+  ['cat-ott', 'Amazon Prime Video', 'amazon-prime-video', 'Prime Video', 'Full Prime Video access with your own profile — watch on any device.', '1 Month', 450, 249, 'in_stock', false, null, 4.8, 512, 1190, 'Within 10–30 minutes'],
+  ['cat-ott', 'Disney+ Premium', 'disney-plus-premium', 'Disney+', 'Marvel, Star Wars, Pixar and National Geographic in one place.', '1 Month', 500, 279, 'in_stock', true, 'Family Favourite', 4.7, 388, 860, 'Within 10–30 minutes'],
+  ['cat-ott', 'Hoichoi Premium', 'hoichoi-premium', 'Hoichoi', 'The biggest Bengali OTT library — original series, films and web shows.', '1 Month', 300, 169, 'in_stock', false, null, 4.8, 274, 720, 'Within 10–30 minutes'],
+  ['cat-ott', 'Zee5 Premium', 'zee5-premium', 'ZEE5', 'Indian and Bengali entertainment, originals and live TV channels.', '1 Month', 350, 189, 'limited', false, null, 4.6, 156, 340, 'Within 10–30 minutes'],
+  ['cat-ott', 'Chorki Premium', 'chorki-premium', 'Chorki', 'Bangladeshi original series and films in Full HD.', '1 Month', 250, 149, 'in_stock', false, null, 4.7, 198, 410, 'Within 10–30 minutes'],
+
+  ['cat-ai', 'ChatGPT Plus', 'chatgpt-plus', 'OpenAI', 'GPT-5 class models, advanced reasoning and priority access — private account.', '1 Month', 2900, 1290, 'in_stock', true, 'Trending', 4.9, 1042, 1830, 'Within 15–45 minutes'],
+  ['cat-ai', 'ChatGPT Plus — 3 Months', 'chatgpt-plus-3-months', 'OpenAI', 'A full quarter of ChatGPT Plus on a private account at a lower monthly rate.', '3 Months', 8700, 3490, 'in_stock', true, 'Save 60%', 4.8, 415, 640, 'Within 15–45 minutes'],
+  ['cat-ai', 'Claude Pro', 'claude-pro', 'Anthropic', 'Anthropic Claude Pro with extended thinking and 5x higher usage limits.', '1 Month', 2800, 1190, 'in_stock', true, null, 4.9, 386, 520, 'Within 15–45 minutes'],
+  ['cat-ai', 'Google Gemini Advanced', 'google-gemini-advanced', 'Google', 'Gemini Advanced with 2TB Google One storage included.', '1 Month', 2400, 990, 'in_stock', false, null, 4.7, 248, 430, 'Within 15–45 minutes'],
+  ['cat-ai', 'Perplexity Pro', 'perplexity-pro', 'Perplexity', 'AI answer engine with unlimited Pro searches and model selection.', '1 Month', 2600, 890, 'in_stock', false, null, 4.7, 176, 310, 'Within 15–45 minutes'],
+  ['cat-ai', 'Midjourney Standard', 'midjourney-standard', 'Midjourney', '15 hours of fast GPU time plus unlimited relaxed image generation.', '1 Month', 3200, 1590, 'limited', false, null, 4.6, 129, 190, 'Within 1–3 hours'],
+  ['cat-ai', 'ElevenLabs Creator', 'elevenlabs-creator', 'ElevenLabs', 'Studio-grade AI voice generation with 100k credits per month.', '1 Month', 2900, 1390, 'in_stock', false, 'New', 4.8, 88, 140, 'Within 1–3 hours'],
+
+  ['cat-edu', 'Coursera Plus', 'coursera-plus', 'Coursera', 'Unlimited access to 7,000+ courses with certificates from top universities.', '1 Month', 6500, 1290, 'in_stock', true, 'Career Boost', 4.8, 214, 380, 'Within 2–6 hours'],
+  ['cat-edu', 'Udemy Premium Courses Bundle', 'udemy-premium-bundle', 'Udemy', 'Hand-picked best-selling courses across tech, design and business.', '12 Months', 4200, 1490, 'in_stock', false, null, 4.6, 142, 260, 'Within 2–6 hours'],
+  ['cat-edu', 'Skillshare Premium', 'skillshare-premium', 'Skillshare', 'Thousands of creative classes with offline viewing.', '3 Months', 3600, 890, 'in_stock', false, null, 4.6, 118, 210, 'Within 2–6 hours'],
+  ['cat-edu', 'Duolingo Super', 'duolingo-super', 'Duolingo', 'No ads, unlimited hearts and personalised practice.', '12 Months', 2400, 790, 'in_stock', false, null, 4.7, 203, 340, 'Within 1–4 hours'],
+  ['cat-edu', 'LinkedIn Learning', 'linkedin-learning', 'LinkedIn', '16,000+ expert courses plus a LinkedIn Premium badge.', '1 Month', 3200, 890, 'limited', false, null, 4.5, 96, 150, 'Within 2–6 hours'],
+
+  ['cat-soft', 'Microsoft 365 Family', 'microsoft-365-family', 'Microsoft', 'Word, Excel, PowerPoint, Outlook + 1TB OneDrive — 12 months.', '12 Months', 6900, 1290, 'in_stock', true, 'Official', 4.9, 486, 910, 'Within 30–90 minutes'],
+  ['cat-soft', 'Canva Pro', 'canva-pro', 'Canva', 'Brand kit, 100M+ premium assets and full AI design suite.', '12 Months', 6500, 990, 'in_stock', true, 'Best Value', 4.9, 512, 1120, 'Within 30–60 minutes'],
+  ['cat-soft', 'Adobe Creative Cloud All Apps', 'adobe-creative-cloud', 'Adobe', 'Photoshop, Illustrator, Premiere Pro and 20+ apps — one month.', '1 Month', 3400, 1290, 'limited', true, null, 4.7, 168, 290, 'Within 1–3 hours'],
+  ['cat-soft', 'Notion Plus', 'notion-plus', 'Notion', 'Unlimited blocks, AI writing and team collaboration.', '12 Months', 4800, 1090, 'in_stock', false, null, 4.7, 132, 240, 'Within 1–3 hours'],
+  ['cat-soft', 'Grammarly Premium', 'grammarly-premium', 'Grammarly', 'Advanced grammar, tone and plagiarism checks.', '1 Month', 2200, 690, 'in_stock', false, null, 4.6, 108, 200, 'Within 1–3 hours'],
+  ['cat-soft', 'Google Workspace Business', 'google-workspace-business', 'Google', 'Professional email on your domain with 2TB Drive.', '12 Months', 8400, 2290, 'in_stock', false, null, 4.8, 64, 120, 'Within 6–24 hours'],
+
+  ['cat-game', 'Spotify Premium Individual', 'spotify-premium-individual', 'Spotify', 'Ad-free music, offline listening and high-quality audio.', '3 Months', 1800, 590, 'in_stock', true, 'Popular', 4.8, 392, 830, 'Within 30–90 minutes'],
+  ['cat-game', 'YouTube Premium', 'youtube-premium', 'YouTube', 'Ad-free YouTube, background play and YouTube Music.', '1 Month', 450, 229, 'in_stock', true, null, 4.8, 341, 760, 'Within 30–90 minutes'],
+  ['cat-game', 'PlayStation Plus Essential', 'playstation-plus-essential', 'PlayStation', 'Monthly games, online multiplayer and exclusive discounts.', '3 Months', 3200, 1490, 'in_stock', false, null, 4.6, 84, 160, 'Within 2–8 hours'],
+  ['cat-game', 'Xbox Game Pass Ultimate', 'xbox-game-pass-ultimate', 'Xbox', 'Hundreds of games on console, PC and cloud gaming.', '1 Month', 2400, 1090, 'limited', false, null, 4.7, 76, 130, 'Within 2–8 hours'],
+  ['cat-game', 'Netflix + Spotify Combo', 'netflix-spotify-combo', 'NEXORA', 'Private Netflix 4K profile plus Spotify Premium — one bundle, one price.', '1 Month', 1100, 599, 'in_stock', true, 'Bundle', 4.9, 168, 320, 'Within 10–30 minutes'],
+
+  ['cat-design', 'Figma Professional', 'figma-professional', 'Figma', 'Unlimited files, shared libraries and advanced prototyping.', '12 Months', 6200, 1490, 'in_stock', false, null, 4.7, 92, 170, 'Within 1–4 hours'],
+  ['cat-design', 'Envato Elements', 'envato-elements', 'Envato', 'Unlimited premium templates, fonts, graphics and stock video.', '1 Month', 2600, 890, 'in_stock', false, null, 4.7, 118, 210, 'Within 1–4 hours'],
+  ['cat-design', 'Freepik Premium', 'freepik-premium', 'Freepik', 'Unlimited AI image tools plus premium stock library.', '1 Month', 1900, 590, 'in_stock', false, null, 4.5, 74, 140, 'Within 1–4 hours'],
+]
+
+export const demoProducts: Product[] = seeds.map((s, i) => ({
+  id: `prod-${i + 1}`,
+  category_id: s[0],
+  name: s[1],
+  slug: s[2],
+  brand: s[3],
+  short_description: s[4],
+  description: `${s[4]}\n\nDelivered as a genuine premium plan — never a cracked or trial workaround. ${s[1]} is activated by our team after your payment is verified, usually ${s[14].toLowerCase()}. You will receive the access details by email and inside your NEXORA dashboard, with a 30-day replacement warranty on every order.`,
+  image_url: null,
+  gallery: [],
+  duration: s[5],
+  original_price: s[6],
+  discounted_price: s[7],
+  delivery_info: 'Instant delivery after payment verification. Login details are sent to your email and customer dashboard.',
+  delivery_time: s[14],
+  availability: s[8],
+  is_featured: s[9],
+  is_active: true,
+  badge: s[10],
+  rating: s[11],
+  rating_count: s[12],
+  sales_count: s[13],
+  sort_order: i + 1,
+  created_at: new Date(Date.now() - i * 86400000).toISOString(),
+}))
+
+export const demoPaymentMethods: PaymentMethodConfig[] = [
+  {
+    id: 'pm-1',
+    method: 'bkash',
+    display_name: 'bKash',
+    account_name: 'NEXORA Subscriptions',
+    account_number: '01575864415',
+    account_type: 'Personal',
+    bank_name: null,
+    branch: null,
+    routing_number: null,
+    instructions:
+      '1) Open bKash app → Send Money. 2) Enter the number above. 3) Pay the exact order total. 4) Copy the Transaction ID (TrxID) from the confirmation message and submit it below.',
+    is_active: true,
+    sort_order: 1,
+  },
+  {
+    id: 'pm-2',
+    method: 'nagad',
+    display_name: 'Nagad',
+    account_name: 'NEXORA Subscriptions',
+    account_number: '01575864415',
+    account_type: 'Personal',
+    bank_name: null,
+    branch: null,
+    routing_number: null,
+    instructions:
+      '1) Open Nagad app → Send Money. 2) Enter the number above. 3) Pay the exact order total. 4) Copy the Transaction ID (TxnID) and submit it below.',
+    is_active: true,
+    sort_order: 2,
+  },
+  {
+    id: 'pm-3',
+    method: 'bank_transfer',
+    display_name: 'Bank Transfer',
+    account_name: 'NEXORA Subscriptions',
+    account_number: '1234567890123',
+    account_type: 'Current',
+    bank_name: 'Dutch-Bangla Bank Ltd.',
+    branch: 'Dhanmondi, Dhaka',
+    routing_number: '1234567890124',
+    instructions:
+      'Send the amount via BEFTN / NPSB or your bank app to the account above. In the reference field write your NEXORA order number, then submit the transfer reference number below.',
+    is_active: true,
+    sort_order: 3,
+  },
+]
+
+export const demoFaqs: Faq[] = [
+  ['How fast will I receive my subscription?', 'Most orders are delivered within 10–30 minutes after your payment is verified. Our support hours are 10:00 AM to 11:00 PM (BST). Orders placed after hours are delivered first thing the next morning.', 'Delivery'],
+  ['How do I pay? Is bKash accepted?', 'Yes. We accept bKash, Nagad and bank transfer. After placing an order you will see our merchant number and step-by-step instructions. Send the exact amount, then submit your Transaction ID on the order page — our team verifies it manually.', 'Payment'],
+  ['Is my payment safe if something goes wrong?', 'Every payment is verified by a human before delivery. If a subscription cannot be delivered, you get a full refund to your bKash/Nagad number or a replacement — your choice. Refunds are processed within 24–72 hours.', 'Payment'],
+  ['Do I need my own account for Netflix or ChatGPT?', 'It depends on the product. Netflix Premium is delivered as a private profile inside a Premium plan. For ChatGPT Plus, Claude Pro, Canva Pro and Spotify we usually upgrade your own account. Each product page states the delivery model clearly.', 'Products'],
+  ['Can I use a subscription on more than one device?', 'Yes for most products. Netflix Premium supports up to 4 simultaneous screens, Spotify allows multiple devices, and Microsoft 365 covers up to 5 devices.', 'Products'],
+  ['What happens if my subscription stops working?', 'Message our support on WhatsApp with your order number and we fix or replace it within 24 hours. All subscriptions are covered by a 30-day replacement warranty.', 'Support'],
+  ['Can I cancel an order?', 'You can cancel any order that has not been delivered yet by contacting support. If payment was already verified but delivery has not happened, we refund the full amount.', 'Orders'],
+  ['Do you offer bulk or reseller pricing?', 'Yes. If you need 5 or more subscriptions per month, contact us on WhatsApp with your requirements and we will send a reseller price list.', 'Business'],
+  ['Do I need an account to place an order?', 'No — guest checkout is supported. But creating a free account lets you see all orders, track status and re-order in one click.', 'Orders'],
+  ['Which payment methods are verified the fastest?', 'bKash and Nagad are usually verified within 10–20 minutes. Bank transfers can take longer because of bank confirmation cycles.', 'Payment'],
+].map(([question, answer, category], i) => ({
+  id: `faq-${i + 1}`,
+  question: question as string,
+  answer: answer as string,
+  category: category as string,
+  sort_order: i + 1,
+  is_active: true,
+}))
+
+export const demoPromotions: Promotion[] = [
+  {
+    id: 'promo-1',
+    title: 'Netflix 4K + Spotify Bundle',
+    subtitle: 'Two premium services, one flat price',
+    description: 'Keep your entertainment fully covered this month: private Netflix 4K profile plus Spotify Premium Individual.',
+    image_url: null,
+    badge: 'Bundle Deal',
+    cta_label: 'Get the Bundle',
+    cta_link: '/product/netflix-spotify-combo',
+    discount_text: 'Save 45%',
+    is_active: true,
+    sort_order: 1,
+  },
+  {
+    id: 'promo-2',
+    title: 'ChatGPT Plus — Trending',
+    subtitle: 'The AI tool everyone is buying',
+    description: 'Private ChatGPT Plus account with frontier models and priority access. Delivered in under 45 minutes.',
+    image_url: null,
+    badge: 'AI Pick',
+    cta_label: 'Explore AI Tools',
+    cta_link: '/category/ai-premium-tools',
+    discount_text: 'From ৳1,190',
+    is_active: true,
+    sort_order: 2,
+  },
+  {
+    id: 'promo-3',
+    title: 'Microsoft 365 — 12 Months',
+    subtitle: 'Official activation on your own account',
+    description: 'Word, Excel, PowerPoint and 1TB OneDrive for a full year at 80% off retail price.',
+    image_url: null,
+    badge: 'Best Value',
+    cta_label: 'Buy Now',
+    cta_link: '/product/microsoft-365-family',
+    discount_text: 'Save 81%',
+    is_active: true,
+    sort_order: 3,
+  },
+]
+
+export const demoReviews: Review[] = [
+  ['Tanvir Ahmed', 'Dhaka', 5, 'Ordered Netflix Premium at 1 AM and got the login within 15 minutes. Private profile with my own PIN — exactly as promised.'],
+  ['Sadia Rahman', 'Chattogram', 5, 'Bought ChatGPT Plus for my thesis work. Payment verified on bKash in minutes and the account is completely private. Genuinely reliable.'],
+  ['Rafid Hasan', 'Sylhet', 5, 'Third order from NEXORA. Canva Pro and Microsoft 365 both activated on my own accounts. Support replies on WhatsApp instantly.'],
+  ['Nusrat Jahan', 'Dhaka', 4, 'Great prices and honest support. Delivery took about an hour because I ordered at midnight, but they kept me updated the whole time.'],
+  ['Imran Kabir', 'Khulna', 5, 'I was sceptical about buying subscriptions online, but the manual verification system makes it feel safe. Got my Disney+ profile in 12 minutes.'],
+  ['Farhana Akter', 'Rajshahi', 5, 'Coursera Plus at this price is unreal. Certificate works and my university accepted it. Real people handling the support too.'],
+  ['Mehedi Hasan', 'Barishal', 5, 'Bought the Netflix + Spotify bundle for my sister. Everything worked first try and renewals are one message away.'],
+  ['Ayesha Siddika', 'Dhaka', 5, 'Spotify Premium upgraded on my own account in 40 minutes. Two months in, zero issues. This is my go-to store now.'],
+].map(([customer_name, customer_city, rating, comment], i) => ({
+  id: `rev-${i + 1}`,
+  customer_name: customer_name as string,
+  customer_city: customer_city as string,
+  rating: rating as number,
+  comment: comment as string,
+  avatar_url: null,
+  is_approved: true,
+  created_at: new Date(Date.now() - (i + 1) * 3 * 86400000).toISOString(),
+}))
+
+export const demoSettings = {
+  site: {
+    name: 'NEXORA',
+    tagline: 'Premium Subscriptions — All in One Place',
+    hero_headline: 'Unlock a World of Premium Entertainment & More!',
+    hero_subtitle: 'Premium Subscriptions — All in One Place',
+    hero_cta: 'Explore Subscriptions',
+    hero_banner: '/brand/nexora-banner.png',
+  },
+  contact: {
+    whatsapp: '+8801575864415',
+    phone: '01575864415',
+    email: 'nexora.sub01@gmail.com',
+    address: 'Dhanmondi, Dhaka, Bangladesh',
+    hours: 'Sat–Fri · 10:00 AM – 11:00 PM (BST)',
+    facebook: '',
+    messenger: '',
+  },
+  notices: {
+    announcement: 'Instant delivery on 40+ premium subscriptions · Verified bKash, Nagad & Bank payments',
+    announcement_active: true,
+    checkout_note:
+      'Payments are verified by a human within 30 minutes during business hours. You will get an email once your order is delivered.',
+    support_note: 'Need help choosing a plan? Message us on WhatsApp — we reply in minutes.',
+  },
+  seo: {
+    title: 'NEXORA — Premium Subscriptions, All in One Place',
+    description:
+      "Bangladesh's premium digital subscription store: OTT, AI tools, education, software and gaming. Instant delivery with verified manual payments.",
+    keywords: 'netflix bangladesh, chatgpt plus bd, buy subscription bd, bkash subscription store',
+  },
+  trust: {
+    items: [
+      { title: 'Premium Accounts', text: 'Genuine plans, never cracked tools.' },
+      { title: 'Super Fast Activation', text: 'Most orders delivered in under 30 minutes.' },
+      { title: '100% Secure', text: 'Manual verification on bKash, Nagad & bank.' },
+      { title: 'Trusted by Millions', text: '10,000+ happy customers across Bangladesh.' },
+    ],
+  },
+  rewards: {
+    referral_note: 'Refer a friend and get ৳50 wallet credit on their first delivered order.',
+    warranty_days: 30,
+  },
+}
