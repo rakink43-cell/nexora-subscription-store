@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { useStore } from '../context/SettingsContext'
 import { Hero } from '../components/home/Hero'
+import { OfferTicker } from '../components/home/OfferTicker'
 import { CategoryGrid } from '../components/home/CategoryGrid'
 import { ProductRail } from '../components/home/ProductRail'
 import { OffersStrip } from '../components/home/OffersStrip'
@@ -75,6 +76,7 @@ export default function HomePage() {
 
   return (
     <>
+      <OfferTicker />
       {sections.map((section) => (
         <Fragment key={section.id}>{renderSection(section.id)}</Fragment>
       ))}
