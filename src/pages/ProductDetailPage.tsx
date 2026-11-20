@@ -41,6 +41,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
+  const [activeImage, setActiveImage] = useState<string | null>(null)
 
   useEffect(() => {
     if (!slug) return
@@ -48,6 +49,7 @@ export default function ProductDetailPage() {
     setLoading(true)
     setError(null)
     setQuantity(1)
+    setActiveImage(null)
     api.catalogue
       .productBySlug(slug)
       .then(async (p) => {
@@ -125,12 +127,31 @@ export default function ProductDetailPage() {
             <ProductMedia
               name={product.name}
               brand={product.brand}
-              imageUrl={product.image_url}
+              imageUrl={activeImage ?? product.image_url}
               size="lg"
               className="aspect-[16/10] w-full"
               rounded="rounded-xl"
             />
           </div>
+          {Array.from(new Set([product.image_url, ...(product.gallery ?? [])].filter((url): url is string => Boolean(url)))).length > 1 && (
+            <div className="mt-3 flex flex-wrap gap-2" aria-label="Product image gallery">
+              {Array.from(new Set([product.image_url, ...(product.gallery ?? [])].filter((url): url is string => Boolean(url)))).map((url, index) => (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => setActiveImage(url)}
+                  aria-label={`View product image ${index + 1}`}
+                  aria-pressed={(activeImage ?? product.image_url) === url}
+                  className={cn(
+                    'h-16 w-20 overflow-hidden rounded-lg border transition',
+                    (activeImage ?? product.image_url) === url ? 'border-[#6EC1FF]' : 'border-white/10 opacity-70 hover:opacity-100',
+                  )}
+                >
+                  <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
             <TrustTile icon={Zap} label="Fast delivery" value={product.delivery_time ?? 'Instant'} />
