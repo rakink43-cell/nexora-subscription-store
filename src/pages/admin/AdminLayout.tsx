@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   LayoutDashboard,
   LifeBuoy,
+  LayoutTemplate,
   LogOut,
   Menu,
   MessageSquareQuote,
@@ -51,6 +52,7 @@ const NAV: { section: string; items: { to: string; label: string; icon: typeof L
   {
     section: 'Website',
     items: [
+      { to: '/admin/homepage', label: 'Homepage editor', icon: LayoutTemplate },
       { to: '/admin/promotions', label: 'Promotions', icon: Sparkles },
       { to: '/admin/content', label: 'Content & FAQ', icon: MessageSquareQuote },
       { to: '/admin/settings', label: 'Settings', icon: Settings },
