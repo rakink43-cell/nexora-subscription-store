@@ -111,6 +111,31 @@ export default function AdminHomepage() {
         </div>
       </AdminCard>
 
+      <div className="mt-4">
+        <AdminCard title="Storefront preview" description="Preview the enabled section order and edited headings before saving.">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-[#07101D]">
+            <div className="border-b border-white/10 bg-[#0B1728] px-4 py-3">
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#6EC1FF]">NEXORA · PREVIEW</p>
+              <p className="mt-2 font-display text-xl font-bold text-white">{settings.site.hero_headline}</p>
+              <p className="mt-1 max-w-xl text-[11px] text-white/50">{settings.site.hero_subtitle}</p>
+              <span className="mt-3 inline-flex rounded-md bg-[#087FEA] px-3 py-1.5 text-[10px] font-semibold text-white">{settings.site.hero_cta}</span>
+            </div>
+            <div className="space-y-2 p-3">
+              {ordered.filter((section) => section.enabled).map((section) => {
+                const heading = form.headings[section.id]
+                return (
+                  <div key={section.id} className="rounded-lg border border-white/8 bg-white/[0.025] p-3">
+                    <p className="text-[8px] font-semibold uppercase tracking-widest text-[#6EC1FF]">{heading?.eyebrow || SECTION_LABELS[section.id].label}</p>
+                    <p className="mt-1 text-[12px] font-bold text-white">{heading?.title || SECTION_LABELS[section.id].label}</p>
+                    {heading?.subtitle && <p className="mt-1 text-[10px] text-white/40">{heading.subtitle}</p>}
+                    <div className="mt-2 flex gap-2">{[1, 2, 3].map((item) => <span key={item} className="h-8 flex-1 rounded bg-white/[0.06]" />)}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </AdminCard>
+      </div>
       <div className="mt-4 space-y-4">
         {EDITABLE_HEADINGS.map((id) => {
           const heading = form.headings[id]
