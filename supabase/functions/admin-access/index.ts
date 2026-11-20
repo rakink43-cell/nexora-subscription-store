@@ -8,7 +8,47 @@ const SITE_URL = "https://nexora-subscription-store.pages.dev";
 
 const allowedOrigins = new Set([SITE_URL, "http://localhost:5173"]);
 function isAllowedOrigin(origin: string | null) {
-  return !origin || allowedOrigins.has(origin) || /^https:\/\/[a-f0-9]+\\.nexora-subscription-store\\.pages\\.dev$/i.test(origin);
+  if (!origin) return true;
+  try {
+    const url = new URL(origin);
+    const host = url.hostname.toLowerCase();
+    return url.protocol === "https:" &&
+      (host === "nexora-subscription-store.pages.dev" ||
+       host.endsWith(".nexora-subscription-store.pages.dev"));
+  } catch {
+    return false;
+  }
+}
+const encoder = new TextEncoder();
+
+function headers(origin: string | null) {
+  return {
+    "Access-Control-Allow-Origin": origin ?? SITE_URL,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-api-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
+  };
+}port "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SITE_URL = "https://nexora-subscription-store.pages.dev";
+
+const allowedOrigins = new Set([SITE_URL, "http://localhost:5173"]);
+function isAllowedOrigin(origin: string | null) {
+  if (!origin) return true;
+  try {
+    const url = new URL(origin);
+    const host = url.hostname.toLowerCase();
+    return url.protocol === "https:" &&
+      (host === "nexora-subscription-store.pages.dev" ||
+       host.endsWith(".nexora-subscription-store.pages.dev"));
+  } catch {
+    return false;
+  }
 }
 const encoder = new TextEncoder();
 
