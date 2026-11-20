@@ -22,6 +22,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [resetMode, setResetMode] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [recoveryMode, setRecoveryMode] = useState(searchParams.get('reset') === '1')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   useEffect(() => {
     if (user) navigate(next, { replace: true })
@@ -56,6 +59,37 @@ export default function LoginPage() {
     }
   }
 
+  const saveNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+    setLoading(true)
+    try {
+      if (!('changePassword' in api.auth)) {
+        throw new Error('Password update is unavailable. Please open the reset link again.')
+      }
+      await (api.auth as { changePassword: (password: string) => Promise<void> }).changePassword(newPassword)
+      toast.success('Password updated', 'You can now sign in with your new password.')
+      setRecoveryMode(false)
+      setResetMode(false)
+      setPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      navigate('/login', { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update your password.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const sendReset = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -84,17 +118,50 @@ export default function LoginPage() {
         <div className="mb-7 flex flex-col items-center text-center">
           <Logo size="lg" withWordmark={false} />
           <h1 className="mt-4 font-display text-2xl font-bold text-white">
-            {resetMode ? 'Reset your password' : 'Welcome back'}
+            {recoveryMode ? 'Choose a new password' : resetMode ? 'Reset your password' : 'Welcome back'}
           </h1>
           <p className="mt-1.5 text-[13px] text-white/45">
-            {resetMode
-              ? 'We will email you a secure link to choose a new password.'
-              : 'Sign in to track orders, re-order in one click and manage your subscriptions.'}
+            {recoveryMode
+              ? 'Choose a strong password for your NEXORA account.'
+              : resetMode
+                ? 'We will email you a secure link to choose a new password.'
+                : 'Sign in to track orders, re-order in one click and manage your subscriptions.'}
           </p>
         </div>
 
         <div className="nx-card p-5">
-          {resetSent ? (
+          {recoveryMode ? (
+            <form onSubmit={saveNewPassword} className="space-y-3.5">
+              <Field label="New password" required htmlFor="new-password" hint="At least 8 characters.">
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder="Enter a new password"
+                  required
+                  minLength={8}
+                />
+              </Field>
+              <Field label="Confirm new password" required htmlFor="confirm-password">
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder="Enter the password again"
+                  required
+                  minLength={8}
+                />
+              </Field>
+              {error && <ErrorNote message={error} />}
+              <Button type="submit" loading={loading} className="w-full">
+                Update password
+              </Button>
+            </form>
+          ) : resetSent ? (
             <div className="text-center">
               <p className="text-[13px] leading-relaxed text-white/60">
                 If <b className="text-white">{email}</b> has an account, a reset link is on its way.
@@ -122,7 +189,7 @@ export default function LoginPage() {
                 </div>
               </Field>
 
-              {!resetMode && (
+              {!resetMode && !recoveryMode && (
                 <Field
                   label="Password"
                   required
