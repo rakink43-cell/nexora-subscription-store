@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { SettingsProvider } from './context/SettingsContext'
@@ -7,6 +7,7 @@ import { ToastProvider } from './context/ToastContext'
 import { Layout } from './components/layout/Layout'
 import { AdminRoute, ProtectedRoute } from './components/layout/ProtectedRoute'
 import { Spinner } from './components/ui'
+import { trackEvent } from './lib/api'
 
 import HomePage from './pages/HomePage'
 import ProductsPage from './pages/ProductsPage'
@@ -48,6 +49,31 @@ const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 const AdminSupport = lazy(() => import('./pages/admin/AdminSupport'))
 const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'))
 
+function PageViewTracker() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    // Keep admin activity out of public storefront analytics.
+    if (pathname.startsWith('/admin')) return
+
+    try {
+      const storageKey = 'nexora.analytics.visitor'
+      let visitorId = window.sessionStorage.getItem(storageKey)
+      if (!visitorId) {
+        visitorId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `visitor-${Date.now()}-${Math.random().toString(36).slice(2)}`
+        window.sessionStorage.setItem(storageKey, visitorId)
+      }
+      void trackEvent('page_view', { visitor_id: visitorId })
+    } catch {
+      // Analytics is optional and must never interrupt storefront navigation.
+    }
+  }, [pathname])
+
+  return null
+}
+
 function PageFallback() {
   return (
     <div className="grid min-h-[50vh] place-items-center">
@@ -59,6 +85,7 @@ function PageFallback() {
 export default function App() {
   return (
     <BrowserRouter>
+      <PageViewTracker />
       <SettingsProvider>
         <ToastProvider>
           <AuthProvider>
