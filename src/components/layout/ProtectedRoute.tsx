@@ -37,7 +37,7 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     )
   }
   if (!user) {
-    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />
+    return <Navigate to={`/admin/login?next=${encodeURIComponent(location.pathname)}`} replace />
   }
   if (!isAdmin) {
     return (
