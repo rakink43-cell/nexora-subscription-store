@@ -38,6 +38,7 @@ const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'))
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'))
 const AdminCustomers = lazy(() => import('./pages/admin/AdminCustomers'))
 const AdminPromotions = lazy(() => import('./pages/admin/AdminPromotions'))
+const AdminHomepage = lazy(() => import('./pages/admin/AdminHomepage'))
 const AdminCoupons = lazy(() => import('./pages/admin/AdminCoupons'))
 const AdminContent = lazy(() => import('./pages/admin/AdminContent'))
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
@@ -141,6 +142,14 @@ export default function App() {
                       element={
                         <Suspense fallback={<PageFallback />}>
                           <AdminCustomers />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="homepage"
+                      element={
+                        <Suspense fallback={<PageFallback />}>
+                          <AdminHomepage />
                         </Suspense>
                       }
                     />
