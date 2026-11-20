@@ -231,6 +231,36 @@ export interface Notification {
   created_at: string
 }
 
+export type HomepageSectionId =
+  | 'hero'
+  | 'categories'
+  | 'best_selling'
+  | 'ott'
+  | 'ai'
+  | 'education'
+  | 'offers'
+  | 'why_choose'
+  | 'software'
+  | 'testimonials'
+  | 'faq'
+
+export interface HomepageSection {
+  id: HomepageSectionId
+  enabled: boolean
+  sort_order: number
+}
+
+export interface HomepageHeading {
+  eyebrow: string
+  title: string
+  subtitle: string
+}
+
+export interface HomepageSettings {
+  sections: HomepageSection[]
+  headings: Record<string, HomepageHeading>
+}
+
 export interface SiteSettings {
   site: {
     name: string
@@ -258,6 +288,7 @@ export interface SiteSettings {
   seo: { title: string; description: string; keywords: string }
   trust: { items: { title: string; text: string }[] }
   rewards: { referral_note: string; warranty_days: number }
+  homepage: HomepageSettings
 }
 
 export interface DashboardStats {
