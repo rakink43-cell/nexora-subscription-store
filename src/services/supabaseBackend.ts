@@ -453,15 +453,19 @@ export const support = {
 export const admin = {
   async analytics() {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    const [eventResult, profileResult] = await Promise.all([
+    const [eventResult, profileResult, roleResult] = await Promise.all([
       sb().from('analytics_events').select('event_name,path,metadata,created_at').gte('created_at', since).order('created_at', { ascending: true }).limit(5000),
-      sb().from('profiles').select('created_at').gte('created_at', since),
+      sb().from('profiles').select('id,created_at').gte('created_at', since),
+      sb().from('user_roles').select('user_id').in('role', ['admin', 'staff']),
     ])
     if (eventResult.error) fail(eventResult.error, 'Could not load analytics.')
     if (profileResult.error) fail(profileResult.error, 'Could not load account signups.')
+    if (roleResult.error) fail(roleResult.error, 'Could not filter administrator accounts.')
     const events = eventResult.data ?? []
-    const profiles = profileResult.data ?? []
-    const views = events.filter((event) => event.event_name === 'page_view')
+    const adminIds = new Set((roleResult.data ?? []).map((row) => row.user_id))
+    const profiles = (profileResult.data ?? []).filter((profile) => !adminIds.has(profile.id))
+    // Older builds may have recorded admin navigation; exclude it from public metrics.
+    const views = events.filter((event) => event.event_name === 'page_view' && !(event.path ?? '').startsWith('/admin'))
     const visitors = new Set(views.map((event) => (event.metadata as Record<string, unknown>)?.visitor_id).filter((id): id is string => typeof id === 'string'))
     const daily = Array.from({ length: 14 }, (_, index) => {
       const day = new Date()
