@@ -28,6 +28,13 @@ const sb = () => {
   return supabase
 }
 
+// Always send production auth emails back to the deployed storefront.
+// Local Vite development keeps its own origin for local testing.
+const authRedirectBase = () =>
+  import.meta.env.PROD
+    ? 'https://nexora-subscription-store.pages.dev'
+    : window.location.origin
+
 /** Normalise a Supabase/PostgREST error into a friendly message. */
 function fail(error: unknown, fallback = 'Something went wrong. Please try again.'): never {
   const message =
@@ -100,7 +107,7 @@ export const auth = {
       password: input.password,
       options: {
         data: { full_name: input.fullName.trim(), phone: input.phone?.trim() ?? '' },
-        emailRedirectTo: `${window.location.origin}/login?verified=1`,
+        emailRedirectTo: `${authRedirectBase()}/login?verified=1`,
       },
     })
     if (error) fail(error, 'Could not create your account.')
@@ -137,7 +144,7 @@ export const auth = {
 
   async resetPassword(email: string): Promise<void> {
     const { error } = await sb().auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/login?reset=1`,
+      redirectTo: `${authRedirectBase()}/login?reset=1`,
     })
     if (error) fail(error)
   },
