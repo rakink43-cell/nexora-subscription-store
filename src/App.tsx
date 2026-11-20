@@ -31,6 +31,8 @@ import LegalPage from './pages/LegalPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 /* Admin bundle is code-split so storefront visitors never download it. */
+const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'))
+const AdminSetupPage = lazy(() => import('./pages/admin/AdminSetupPage'))
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
@@ -62,6 +64,8 @@ export default function App() {
           <AuthProvider>
             <CartProvider>
               <Routes>
+                <Route path="admin/login" element={<Suspense fallback={<PageFallback />}><AdminLoginPage /></Suspense>} />
+                <Route path="admin/setup" element={<Suspense fallback={<PageFallback />}><AdminSetupPage /></Suspense>} />
                 <Route element={<Layout />}>
                   <Route index element={<HomePage />} />
                   <Route path="products" element={<ProductsPage />} />

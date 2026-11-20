@@ -37,7 +37,7 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
     )
   }
   if (!user) {
-    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />
+    return <Navigate to={`/admin/login?next=${encodeURIComponent(location.pathname)}`} replace />
   }
   if (!isAdmin) {
     return (
@@ -53,7 +53,7 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
             the database, not by this message.
           </p>
           <p className="mt-4 rounded-lg border border-white/8 bg-black/30 px-3 py-2 text-left font-mono text-[11px] text-white/40">
-            select public.bootstrap_admin('your@email.com', 'secret');
+            Admin username login is configured separately from customer accounts.
           </p>
         </div>
       </div>

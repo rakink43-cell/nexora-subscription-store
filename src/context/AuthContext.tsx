@@ -19,6 +19,7 @@ interface AuthState {
   isAdmin: boolean
   loading: boolean
   signIn: (email: string, password: string) => Promise<Profile>
+  signInAdmin: (username: string, password: string) => Promise<Profile>
   signUp: (input: {
     email: string
     password: string
@@ -73,6 +74,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return profile
   }, [])
 
+  const signInAdmin = useCallback(async (username: string, password: string) => {
+    if (!supabase) throw new Error('The live authentication service is not configured.')
+    const { data, error } = await supabase.functions.invoke('admin-access', {
+      body: { action: 'login', username, password },
+    })
+    if (error) throw error
+    if (!data?.session) throw new Error(data?.error ?? 'Invalid username or password.')
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    })
+    if (sessionError) throw sessionError
+    const profile = await api.auth.getUser()
+    const resolvedRole = await api.auth.getRole()
+    if (!profile || resolvedRole !== 'admin') {
+      await supabase.auth.signOut()
+      throw new Error('This account does not have administrator access.')
+    }
+    setUser(profile)
+    setRole('admin')
+    return profile
+  }, [])
+
   const signUp = useCallback<AuthState['signUp']>(async (input) => {
     // Demo + live backends return different shapes:
     //   demo → Profile, live → { needsConfirmation }
@@ -106,12 +130,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin: role === 'admin' || role === 'staff',
       loading,
       signIn,
+      signInAdmin,
       signUp,
       signOut,
       updateProfile,
       refresh: load,
     }),
-    [user, role, loading, signIn, signUp, signOut, updateProfile, load],
+    [user, role, loading, signIn, signInAdmin, signUp, signOut, updateProfile, load],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
