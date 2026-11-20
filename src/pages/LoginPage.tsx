@@ -27,8 +27,9 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
 
   useEffect(() => {
-    if (user) navigate(next, { replace: true })
-  }, [user, navigate, next])
+    // Keep recovery sessions on this screen until the new password is saved.
+    if (user && !recoveryMode) navigate(next, { replace: true })
+  }, [user, recoveryMode, navigate, next])
 
   useEffect(() => {
     if (searchParams.get('verified')) {
