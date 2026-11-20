@@ -70,6 +70,7 @@ export default function AdminProducts() {
   const [busy, setBusy] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [bulkAvailability, setBulkAvailability] = useState('in_stock')
+  const [pricePercent, setPricePercent] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -133,6 +134,108 @@ export default function AdminProducts() {
     }
   }
 
+  const applyPriceChange = async () => {
+    const percent = Number(pricePercent)
+    if (!Number.isFinite(percent) || percent < -90 || percent > 500) {
+      toast.error('Enter a percentage between -90 and 500.')
+      return
+    }
+    const targets = products.filter((product) => selectedIds.includes(product.id))
+    if (!targets.length) return
+    setBusy(true)
+    try {
+      for (const product of targets) {
+        const original = Math.max(0, Math.round(Number(product.original_price) * (1 + percent / 100)))
+        const discounted = Math.max(0, Math.round(Number(product.discounted_price) * (1 + percent / 100)))
+        await api.admin.saveProduct({ ...product, original_price: original, discounted_price: discounted })
+      }
+      toast.success('Bulk pricing updated', targets.length + ' product(s) updated')
+      setSelectedIds([])
+      setPricePercent('')
+      await load()
+    } catch (err) {
+      toast.error('Pricing update stopped', err instanceof Error ? err.message : undefined)
+      await load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const exportCsv = () => {
+    const quote = (value: unknown) => '"' + String(value ?? '').replace(/"/g, '""') + '"'
+    const rows = [
+      ['name', 'slug', 'brand', 'original_price', 'discounted_price', 'availability', 'is_active', 'is_featured'],
+      ...filtered.map((product) => [product.name, product.slug, product.brand, product.original_price, product.discounted_price, product.availability, product.is_active, product.is_featured]),
+    ]
+    const csv = rows.map((row) => row.map(quote).join(',')).join('\r\n')
+    const url = URL.createObjectURL(new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }))
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = 'nexora-products.csv'
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const parseCsvRow = (line: string) => {
+    const cells: string[] = []
+    let value = ''
+    let quoted = false
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i]
+      if (char === '"' && quoted && line[i + 1] === '"') { value += '"'; i++ }
+      else if (char === '"') quoted = !quoted
+      else if (char === ',' && !quoted) { cells.push(value); value = '' }
+      else value += char
+    }
+    cells.push(value)
+    return cells
+  }
+
+  const importCsv = async (file?: File) => {
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { toast.error('CSV must be smaller than 2 MB.'); return }
+    const text = await file.text()
+    const lines = text.replace(/^\\uFEFF/, '').split(/\\r?\\n/).filter((line) => line.trim())
+    if (lines.length < 2) { toast.error('CSV has no product rows.'); return }
+    const headers = parseCsvRow(lines[0]).map((header) => header.trim().toLowerCase())
+    const required = ['slug', 'original_price', 'discounted_price']
+    if (!required.every((header) => headers.includes(header))) {
+      toast.error('CSV must include slug, original_price and discounted_price columns.')
+      return
+    }
+    const index = (name: string) => headers.indexOf(name)
+    const bySlug = new Map(products.map((product) => [product.slug, product]))
+    const updates = lines.slice(1).map((line) => parseCsvRow(line)).filter((cells) => cells.length === headers.length)
+    const matched = updates.map((cells) => ({ cells, product: bySlug.get(cells[index('slug')].trim()) })).filter((row) => row.product)
+    if (!matched.length) { toast.error('No matching product slugs found. Nothing imported.'); return }
+    setBusy(true)
+    let count = 0
+    try {
+      for (const { cells, product } of matched) {
+        const original = Number(cells[index('original_price')])
+        const discounted = Number(cells[index('discounted_price')])
+        if (!Number.isFinite(original) || !Number.isFinite(discounted) || original < 0 || discounted < 0) continue
+        await api.admin.saveProduct({
+          ...product!,
+          original_price: original,
+          discounted_price: discounted,
+          ...(index('brand') >= 0 ? { brand: cells[index('brand')] || null } : {}),
+          ...(index('availability') >= 0 ? { availability: cells[index('availability')] as Product['availability'] } : {}),
+          ...(index('is_active') >= 0 ? { is_active: cells[index('is_active')].toLowerCase() === 'true' } : {}),
+          ...(index('is_featured') >= 0 ? { is_featured: cells[index('is_featured')].toLowerCase() === 'true' } : {}),
+        })
+        count++
+      }
+      toast.success('CSV import complete', count + ' product(s) updated by matching slug')
+      await load()
+    } catch (err) {
+      toast.error('CSV import stopped', err instanceof Error ? err.message : undefined)
+      await load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const duplicate = async (product: Product) => {
     try {
       await api.admin.saveProduct({
@@ -166,6 +269,14 @@ export default function AdminProducts() {
       />
 
       {error && <ErrorNote message={error} className="mb-4" />}
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={exportCsv} icon={<Upload className="h-3.5 w-3.5 rotate-180" />}>Export CSV</Button>
+        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-[11px] font-semibold text-white/70 hover:bg-white/5">
+          <Upload className="h-3.5 w-3.5" /> Import CSV
+          <input type="file" accept=".csv,text/csv" className="hidden" disabled={busy} onChange={(event) => { void importCsv(event.target.files?.[0]); event.currentTarget.value = '' }} />
+        </label>
+      </div>
 
       <div className="mb-3 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
@@ -204,6 +315,10 @@ export default function AdminProducts() {
             <option value="out_of_stock">Out of stock</option>
           </Select>
           <Button size="sm" loading={busy} onClick={() => void applyBulk({ availability: bulkAvailability as Product['availability'] })}>Apply stock</Button>
+          <div className="flex items-center gap-1.5">
+            <Input value={pricePercent} onChange={(e) => setPricePercent(e.target.value)} placeholder="% e.g. 10 or -5" className="w-28 py-1.5 text-[11px]" aria-label="Bulk price percentage change" />
+            <Button size="sm" loading={busy} disabled={!pricePercent.trim()} onClick={() => void applyPriceChange()}>Adjust prices</Button>
+          </div>
           <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>Clear</Button>
         </div>
       )}
@@ -219,6 +334,7 @@ export default function AdminProducts() {
             <p className="mt-0.5 text-[11.5px] text-white/35">Add your first product to start selling.</p>
           </div>
         ) : (
+          <>
           <div className="mb-2 flex items-center gap-2">
             <input type="checkbox" checked={filtered.length > 0 && filtered.every((product) => selectedIds.includes(product.id))} onChange={(e) => setSelectedIds(e.target.checked ? filtered.map((product) => product.id) : [])} aria-label="Select all filtered products" className="h-4 w-4 accent-[#168BFF]" />
             <span className="text-[10.5px] text-white/40">Select all {filtered.length} filtered products</span>
@@ -319,6 +435,7 @@ export default function AdminProducts() {
               )
             })}
           </AdminTable>
+          </>
         )}
       </AdminCard>
 
