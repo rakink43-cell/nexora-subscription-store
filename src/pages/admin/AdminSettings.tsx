@@ -92,6 +92,7 @@ export default function AdminSettings() {
         <Tab value="payment">Payment</Tab>
         <Tab value="notices">Notices</Tab>
         <Tab value="seo">SEO</Tab>
+        <Tab value="footer">Footer</Tab>
       </Tabs>
 
       {tab === 'site' && (
@@ -153,6 +154,8 @@ export default function AdminSettings() {
             <Field label="Primary button label">
               <Input value={form.site.hero_cta} onChange={(e) => patch('site', { hero_cta: e.target.value })} />
             </Field>
+            <Field label="Secondary button label"><Input value={form.site.hero_secondary_cta} onChange={(e) => patch('site', { hero_secondary_cta: e.target.value })} /></Field>
+            <Field label="Secondary button destination" hint="Use an internal path such as /offers or /products"><Input value={form.site.hero_secondary_link} onChange={(e) => patch('site', { hero_secondary_link: e.target.value })} /></Field>
             <Field label="Banner image path or URL" hint="Upload a JPG, PNG or WEBP image (max 4 MB), or paste an image URL.">
               <Input value={form.site.hero_banner} onChange={(e) => patch('site', { hero_banner: e.target.value })} />
             </Field>
@@ -404,6 +407,9 @@ export default function AdminSettings() {
             <Field label="Keywords">
               <Input value={form.seo.keywords} onChange={(e) => patch('seo', { keywords: e.target.value })} />
             </Field>
+            <Field label="Social share title"><Input value={form.seo.og_title} onChange={(e) => patch('seo', { og_title: e.target.value })} /></Field>
+            <Field label="Social share description"><Textarea value={form.seo.og_description} onChange={(e) => patch('seo', { og_description: e.target.value })} className="min-h-[70px]" /></Field>
+            <Field label="Social share image URL"><Input value={form.seo.og_image} onChange={(e) => patch('seo', { og_image: e.target.value })} /></Field>
           </div>
           <div className="mt-4 rounded-lg border border-white/8 bg-white/[0.02] p-3">
             <p className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-white/35">
@@ -413,6 +419,19 @@ export default function AdminSettings() {
             <p className="mt-1.5 text-[13px] text-[#8AB4F8]">{form.seo.title}</p>
             <p className="text-[11px] text-emerald-500/80">nexora.store</p>
             <p className="mt-0.5 line-clamp-2 text-[11.5px] text-white/50">{form.seo.description}</p>
+          </div>
+        </AdminCard>
+      )}
+
+      {tab === 'footer' && (
+        <AdminCard title="Footer content" description="Edit the brand description and copyright note shown at the bottom of every page.">
+          <div className="space-y-3">
+            <Field label="Footer brand description">
+              <Textarea className="min-h-[90px]" value={form.footer.description} onChange={(e) => patch('footer', { description: e.target.value })} />
+            </Field>
+            <Field label="Copyright / legal note">
+              <Textarea className="min-h-[75px]" value={form.footer.copyright} onChange={(e) => patch('footer', { copyright: e.target.value })} />
+            </Field>
           </div>
         </AdminCard>
       )}
