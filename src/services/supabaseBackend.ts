@@ -451,6 +451,36 @@ export const support = {
 
 /* --------------------------------- admin --------------------------------- */
 export const admin = {
+  async analytics() {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const { data, error } = await sb().from('analytics_events')
+      .select('event_name,path,metadata,created_at')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true })
+      .limit(5000)
+    if (error) fail(error, 'Could not load analytics.')
+    const events = data ?? []
+    const views = events.filter((event) => event.event_name === 'page_view')
+    const signups = events.filter((event) => event.event_name === 'sign_up')
+    const visitors = new Set(views.map((event) => (event.metadata as Record<string, unknown>)?.visitor_id).filter((id): id is string => typeof id === 'string'))
+    const daily = Array.from({ length: 14 }, (_, index) => {
+      const day = new Date()
+      day.setDate(day.getDate() - (13 - index))
+      const key = day.toISOString().slice(0, 10)
+      return {
+        day: key,
+        views: views.filter((event) => event.created_at.slice(0, 10) === key).length,
+        signups: signups.filter((event) => event.created_at.slice(0, 10) === key).length,
+      }
+    })
+    const pages = Object.entries(views.reduce<Record<string, number>>((acc, event) => {
+      const path = event.path || '/'
+      acc[path] = (acc[path] ?? 0) + 1
+      return acc
+    }, {})).map(([path, count]) => ({ path, count })).sort((a, b) => b.count - a.count).slice(0, 8)
+    return { page_views: views.length, visitors: visitors.size, signups: signups.length, daily, pages }
+  },
+
   async stats(): Promise<DashboardStats> {
     const { data, error } = await sb().rpc('admin_dashboard_stats')
     if (error) fail(error, 'Admin access required.')
