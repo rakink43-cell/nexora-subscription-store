@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowRight, KeyRound, Lock, UserRound } from 'lucide-react'
+import { ArrowRight, Lock, UserRound } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { Button, ErrorNote, Field, Input } from '../../components/ui'
