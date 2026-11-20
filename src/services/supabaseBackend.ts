@@ -719,21 +719,37 @@ export const admin = {
   },
 
   async savePaymentMethod(input: PaymentMethodConfig) {
-    const { error } = await sb()
-      .from('payment_methods')
-      .update({
-        display_name: input.display_name,
-        account_name: input.account_name,
-        account_number: input.account_number,
-        account_type: input.account_type,
-        bank_name: input.bank_name,
-        branch: input.branch,
-        routing_number: input.routing_number,
-        instructions: input.instructions,
-        is_active: input.is_active,
-      })
-      .eq('id', input.id)
+    const payload = {
+      method: input.method,
+      method_key: input.method_key,
+      display_name: input.display_name,
+      account_name: input.account_name,
+      account_number: input.account_number,
+      account_type: input.account_type,
+      bank_name: input.bank_name,
+      branch: input.branch,
+      routing_number: input.routing_number,
+      instructions: input.instructions,
+      logo_url: input.logo_url ?? null,
+      qr_image_url: input.qr_image_url ?? null,
+      payment_type: input.payment_type ?? 'manual',
+      extra_details: input.extra_details ?? {},
+      requires_transaction_id: input.requires_transaction_id ?? true,
+      is_active: input.is_active,
+      sort_order: input.sort_order,
+    }
+    const { error } = await sb().from('payment_methods').update(payload).eq('id', input.id)
     if (error) fail(error)
+  },
+
+  async createPaymentMethod(input: Omit<PaymentMethodConfig, 'id'>) {
+    const { error } = await sb().from('payment_methods').insert(input)
+    if (error) fail(error)
+  },
+
+  async deletePaymentMethod(id: string) {
+    const { error } = await sb().from('payment_methods').delete().eq('id', id)
+    if (error) fail(error, 'Could not delete this payment method.')
   },
 
   async settings(): Promise<SiteSettings> {
