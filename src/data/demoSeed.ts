@@ -354,4 +354,17 @@ export const demoSettings = {
     referral_note: 'Refer a friend and get ৳50 wallet credit on their first delivered order.',
     warranty_days: 30,
   },
+  homepage: {
+    sections: [
+      'hero', 'categories', 'best_selling', 'ott', 'ai', 'education',
+      'offers', 'why_choose', 'software', 'testimonials', 'faq',
+    ].map((id, index) => ({ id, enabled: true, sort_order: index + 1 })),
+    headings: {
+      best_selling: { eyebrow: 'Best Selling', title: 'What everyone is buying', subtitle: 'The most requested subscriptions this month — restocked daily.' },
+      ott: { eyebrow: 'Popular OTT Platforms', title: 'Streaming worth paying for', subtitle: 'Private profiles on genuine Premium plans, delivered in minutes.' },
+      ai: { eyebrow: 'Trending AI Tools', title: 'Work smarter with premium AI', subtitle: 'ChatGPT Plus, Claude Pro and friends — activated on private accounts.' },
+      education: { eyebrow: 'Educational Subscriptions', title: 'Invest in skills that pay', subtitle: 'Certificates from Coursera, Udemy, LinkedIn Learning and more.' },
+      software: { eyebrow: 'Software & Productivity', title: 'Tools that get work done', subtitle: 'Microsoft 365, Canva Pro, Adobe and the rest of your toolkit.' },
+    },
+  },
 }
