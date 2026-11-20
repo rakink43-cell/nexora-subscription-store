@@ -415,3 +415,48 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+
+/* NEXORA GAMEVERSE — animated storefront skin */
+@keyframes nx-floaty { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
+@keyframes nx-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes nx-live-pulse { 0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(141,255,189,.5); } 50% { opacity:.65; box-shadow:0 0 0 6px rgba(141,255,189,0); } }
+.nx-offer-ticker { position:relative; z-index:5; display:flex; align-items:stretch; min-height:46px; overflow:hidden; border-block:1px solid rgba(93,190,255,.2); background:linear-gradient(90deg,rgba(0,140,255,.16),rgba(10,12,27,.98) 28%,rgba(75,12,45,.28)); }
+.nx-offer-ticker-label { display:flex; flex:0 0 auto; align-items:center; gap:8px; padding:0 16px; color:#fff; font-size:10px; font-weight:900; letter-spacing:.14em; background:linear-gradient(120deg,#087df4,#5b36d8 70%,#a42a80); box-shadow:8px 0 24px rgba(0,140,255,.18); }
+.nx-live-dot { width:7px; height:7px; border-radius:50%; background:#8dffbd; box-shadow:0 0 10px #8dffbd; animation:nx-live-pulse 1.6s infinite; }
+.nx-offer-ticker-window { min-width:0; overflow:hidden; display:flex; align-items:center; mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent); }
+.nx-offer-ticker-track { display:flex; width:max-content; animation:nx-ticker 32s linear infinite; }
+.nx-offer-ticker:hover .nx-offer-ticker-track { animation-play-state:paused; }
+.nx-offer-ticker-group { display:flex; flex:0 0 auto; align-items:center; }
+.nx-offer-ticker-item { display:inline-flex; align-items:center; gap:9px; padding:0 22px; color:#eaf6ff; font-size:11px; white-space:nowrap; text-decoration:none; }
+.nx-offer-ticker-item strong { font-weight:800; }
+.nx-offer-ticker-discount { border:1px solid rgba(255,91,139,.38); border-radius:999px; background:rgba(240,0,75,.15); padding:3px 8px; color:#ff9abb; font-size:9px; font-weight:900; letter-spacing:.06em; }
+.nx-offer-ticker-item:hover strong { color:#80d7ff; }
+.nx-game-hero { position:relative; isolation:isolate; }
+.nx-game-hero::before { content:''; position:absolute; inset:8% 8% auto; height:240px; z-index:-1; pointer-events:none; background:radial-gradient(ellipse,rgba(0,145,255,.20),transparent 68%); filter:blur(16px); }
+.nx-game-kicker { display:inline-flex; align-items:center; gap:8px; border:1px solid rgba(103,202,255,.32); border-radius:999px; padding:7px 13px; background:rgba(0,130,255,.10); color:#a8e2ff; font-size:10px; font-weight:900; letter-spacing:.17em; text-transform:uppercase; box-shadow:0 0 24px rgba(0,140,255,.12); }
+.nx-game-mascot { display:inline-grid; place-items:center; width:58px; height:58px; margin:0 auto 14px; border:1px solid rgba(126,211,255,.42); border-radius:20px; background:linear-gradient(145deg,rgba(0,140,255,.25),rgba(136,48,220,.22)); box-shadow:0 12px 38px rgba(0,140,255,.2),inset 0 1px rgba(255,255,255,.18); font-size:32px; animation:nx-floaty 4s ease-in-out infinite; }
+.nx-game-title { text-shadow:0 0 32px rgba(0,140,255,.22); }
+.nx-card { border-radius:1.15rem; background:linear-gradient(145deg,rgba(19,29,53,.96),rgba(7,11,23,.98)); }
+.nx-card-hover:hover { transform:translateY(-7px) scale(1.012); border-color:rgba(88,194,255,.62); box-shadow:0 22px 48px -25px rgba(0,140,255,.7),0 0 0 1px rgba(126,211,255,.12); }
+.nx-btn-primary { background:linear-gradient(115deg,#08a5ff,#3159ed 55%,#8a39d8); box-shadow:0 10px 28px -12px rgba(0,140,255,.85),inset 0 1px rgba(255,255,255,.25); }
+.nx-btn-primary:hover:not(:disabled) { transform:translateY(-2px); filter:saturate(1.2) brightness(1.12); }
+.nx-section { position:relative; }
+.nx-section:nth-of-type(even) { background-image:radial-gradient(ellipse at 8% 50%,rgba(0,140,255,.055),transparent 45%),radial-gradient(ellipse at 92% 30%,rgba(130,45,220,.05),transparent 40%); }
+@media(max-width:640px) { .nx-offer-ticker-label { padding-inline:11px; font-size:9px; } .nx-offer-ticker-item { padding-inline:14px; gap:7px; font-size:10px; } }
+@media(prefers-reduced-motion:reduce) { .nx-offer-ticker-track,.nx-game-mascot,.nx-live-dot { animation:none!important; } }
+
+@keyframes nx-feature-in { from { opacity:0; transform:translateY(14px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes nx-orbit { from { transform:rotate(0deg) scale(1); } to { transform:rotate(360deg) scale(1); } }
+@keyframes nx-character-bob { 0%,100% { transform:translateY(0) rotate(-4deg); } 50% { transform:translateY(-13px) rotate(4deg); } }
+.nx-feature-copy { animation:nx-feature-in .55s cubic-bezier(.2,.8,.2,1) both; }
+.nx-feature-orbit { animation:nx-orbit 18s linear infinite; }
+.nx-feature-orbit-reverse { animation:nx-orbit 12s linear infinite reverse; border-style:dotted; }
+.nx-feature-character { animation:nx-character-bob 3.8s ease-in-out infinite; box-shadow:0 22px 70px -25px rgba(0,0,0,.8),0 0 50px rgba(100,190,255,.22),inset 0 1px rgba(255,255,255,.25); }
+.nx-feature-stage { box-shadow:0 30px 90px -48px rgba(0,140,255,.5),inset 0 1px rgba(255,255,255,.08); }
+header.sticky nav a, header.sticky nav button { transition:color .2s ease,background .2s ease,transform .2s ease; }
+header.sticky nav a:hover, header.sticky nav button:hover { text-shadow:0 0 18px rgba(90,190,255,.45); }
+.nx-card img { transition:transform .55s cubic-bezier(.2,.8,.2,1),filter .35s ease; }
+.nx-card-hover:hover img { filter:saturate(1.13) contrast(1.03); }
+.nx-card-hover:focus-within { outline:1px solid rgba(105,200,255,.65); outline-offset:2px; }
+@media(prefers-reduced-motion:reduce) { .nx-feature-copy,.nx-feature-orbit,.nx-feature-character { animation:none!important; } }

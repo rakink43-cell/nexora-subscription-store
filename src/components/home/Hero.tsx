@@ -10,9 +10,20 @@ export function Hero() {
   const site = settings.site
   const slides = [site.hero_banner, ...(site.hero_slides ?? [])].filter((url): url is string => Boolean(url))
   const [slideIndex, setSlideIndex] = useState(0)
+  const [featureIndex, setFeatureIndex] = useState(0)
+  const features = [
+    { tag: 'STREAMING ZONE', title: 'Your favourite worlds. One portal.', text: 'Unlock premium entertainment and stream without limits.', emoji: '🍿', color: 'from-sky-500/30 to-indigo-600/20', link: '/category/ott-subscriptions', action: 'Explore OTT' },
+    { tag: 'AI POWER-UP', title: 'Level up your creativity.', text: 'Discover smart AI tools for ideas, work, learning and creation.', emoji: '🤖', color: 'from-violet-500/30 to-fuchsia-600/20', link: '/category/ai-premium-tools', action: 'Explore AI' },
+    { tag: 'LEARNING ARENA', title: 'Unlock your next skill.', text: 'Premium learning platforms to power your next big move.', emoji: '🚀', color: 'from-emerald-500/25 to-cyan-600/20', link: '/category/educational-subscriptions', action: 'Start learning' },
+    { tag: 'CREATOR LOADOUT', title: 'Build your ultimate toolkit.', text: 'Get productivity, design and creator subscriptions in one place.', emoji: '🎮', color: 'from-rose-500/25 to-orange-500/20', link: '/category/software-productivity', action: 'View toolkit' },
+  ]
   const activeImage = slides.length ? slides[slideIndex % slides.length] : '/brand/nexora-banner.png'
 
   useEffect(() => { setSlideIndex(0) }, [slides.join('|')])
+  useEffect(() => {
+    const timer = window.setInterval(() => setFeatureIndex((index) => (index + 1) % features.length), 5200)
+    return () => window.clearInterval(timer)
+  }, [features.length])
   useEffect(() => {
     if (slides.length < 2) return
     const timer = window.setInterval(() => setSlideIndex((index) => (index + 1) % slides.length), 5000)
@@ -20,7 +31,7 @@ export function Hero() {
   }, [slides.length])
 
   return (
-    <section className="relative isolate overflow-hidden" aria-label="Featured">
+    <section className="nx-game-hero relative isolate overflow-hidden" aria-label="Featured NEXORA gaming marketplace">
       {/* cinematic background using the official promotional banner */}
       <div className="absolute inset-0 -z-10">
         <img
@@ -37,6 +48,7 @@ export function Hero() {
 
       <div className="nx-container pb-14 pt-14 sm:pb-20 sm:pt-20">
         <div className="mx-auto max-w-4xl text-center">
+          <div className="nx-game-mascot" aria-hidden>👾</div>
           <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[#008CFF]/30 bg-[#008CFF]/10 px-3 py-1 text-[11px] font-semibold text-[#7CC7FF] backdrop-blur">
               <BadgeCheck className="h-3 w-3" aria-hidden />
@@ -47,7 +59,8 @@ export function Hero() {
             </span>
           </div>
 
-          <h1 className="font-display text-[clamp(1.9rem,5.4vw,3.9rem)] font-extrabold leading-[1.06] tracking-tight text-white">
+          <div className="nx-game-kicker mx-auto mb-4"><span className="nx-live-dot" /> WELCOME TO THE NEXORA GAMEVERSE</div>
+          <h1 className="nx-game-title font-display text-[clamp(1.9rem,5.4vw,3.9rem)] font-extrabold leading-[1.06] tracking-tight text-white">
             <span className="nx-gradient-text">{site.hero_headline || 'Unlock a World of Premium Entertainment & More!'}</span>
           </h1>
 
@@ -93,30 +106,30 @@ export function Hero() {
         </div>
       </div>
 
-      {/* official banner showcase */}
-      <div className="nx-container pb-12">
-        <div className="group relative overflow-hidden rounded-2xl border border-white/10 shadow-[0_30px_80px_-40px_rgba(0,140,255,0.55)]">
-          <img
-            src={site.hero_banner || '/brand/nexora-banner.png'}
-            alt="NEXORA premium subscriptions — OTT, AI tools, software and more"
-            className="w-full object-cover transition duration-700 group-hover:scale-[1.01]"
-            loading="eager"
-          />
-          {slides.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1.5 backdrop-blur">
-              {slides.map((slide, index) => (
-                <button key={`${slide}-${index}`} type="button" onClick={() => setSlideIndex(index)} aria-label={`Show banner ${index + 1}`} aria-current={slideIndex === index ? 'true' : undefined} className={slideIndex === index ? 'h-2 w-5 rounded-full bg-[#6EC1FF]' : 'h-2 w-2 rounded-full bg-white/45 hover:bg-white/80'} />
-              ))}
+      {/* rotating game-feature showcase */}
+      <div className="nx-container pb-14 sm:pb-16">
+        <div className={cn('nx-feature-stage relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-gradient-to-br p-5 sm:p-8 md:p-10', features[featureIndex].color)}>
+          <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'radial-gradient(circle at 15% 20%, white 1px, transparent 1.5px), radial-gradient(circle at 75% 65%, white 1px, transparent 1.5px)', backgroundSize: '42px 42px, 58px 58px' }} />
+          <div className="relative grid items-center gap-7 md:grid-cols-[1.15fr_.85fr]">
+            <div key={featureIndex} className="nx-feature-copy">
+              <span className="nx-game-kicker">{features[featureIndex].tag}</span>
+              <h2 className="mt-4 max-w-xl font-display text-3xl font-black leading-tight text-white sm:text-4xl">{features[featureIndex].title}</h2>
+              <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">{features[featureIndex].text}</p>
+              <Link to={features[featureIndex].link} className="nx-btn nx-btn-primary mt-6 inline-flex">{features[featureIndex].action}<ArrowRight className="h-4 w-4" /></Link>
             </div>
-          )}
-          <div className={cn('pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10')} aria-hidden />
-          <Link
-            to="/products"
-            className="absolute bottom-3 right-3 hidden items-center gap-1.5 rounded-lg bg-black/65 px-3 py-2 text-[12px] font-semibold text-white backdrop-blur transition hover:bg-[#008CFF] sm:inline-flex"
-          >
-            Browse the full catalogue
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-          </Link>
+            <div className="relative flex min-h-[180px] items-center justify-center sm:min-h-[230px]">
+              <div className="nx-feature-orbit absolute h-44 w-44 rounded-full border border-dashed border-white/25 sm:h-56 sm:w-56" />
+              <div className="nx-feature-orbit nx-feature-orbit-reverse absolute h-32 w-32 rounded-full border border-white/15 sm:h-40 sm:w-40" />
+              <div className="nx-feature-character relative grid h-32 w-32 place-items-center rounded-[2rem] border border-white/20 bg-black/25 text-7xl shadow-2xl backdrop-blur-sm sm:h-40 sm:w-40 sm:text-8xl">{features[featureIndex].emoji}</div>
+              <span className="absolute right-[12%] top-[12%] text-2xl animate-pulse">✦</span><span className="absolute bottom-[10%] left-[12%] text-xl animate-bounce">✧</span>
+            </div>
+          </div>
+          <div className="relative mt-7 flex items-center justify-between border-t border-white/15 pt-4">
+            <span className="text-[10px] font-bold tracking-[.2em] text-white/50">FEATURE {String(featureIndex + 1).padStart(2, '0')} / 04</span>
+            <div className="flex items-center gap-2" aria-label="Feature slideshow controls">
+              {features.map((feature, index) => <button key={feature.tag} type="button" onClick={() => setFeatureIndex(index)} aria-label={'Show ' + feature.tag} aria-current={featureIndex === index ? 'true' : undefined} className={featureIndex === index ? 'h-2 w-8 rounded-full bg-white' : 'h-2 w-2 rounded-full bg-white/35 transition hover:bg-white/70'} />)}
+            </div>
+          </div>
         </div>
       </div>
     </section>
