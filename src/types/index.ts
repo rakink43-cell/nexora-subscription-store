@@ -166,6 +166,8 @@ export interface Promotion {
   cta_label: string | null
   cta_link: string | null
   discount_text: string | null
+  starts_at?: string
+  ends_at?: string | null
   is_active: boolean
   sort_order: number
 }
@@ -271,6 +273,7 @@ export interface SiteSettings {
     hero_secondary_cta: string
     hero_secondary_link: string
     hero_banner: string
+    hero_slides: string[]
   }
   contact: {
     whatsapp: string
@@ -288,7 +291,14 @@ export interface SiteSettings {
     support_note: string
   }
   seo: { title: string; description: string; keywords: string; og_title: string; og_description: string; og_image: string }
-  footer: { description: string; copyright: string }
+  footer: {
+    description: string
+    copyright: string
+    product_links: { label: string; to: string }[]
+    company_links: { label: string; to: string }[]
+    legal_links: { label: string; to: string }[]
+    social_links: { facebook: string; instagram: string; youtube: string; tiktok: string }
+  }
   trust: { items: { title: string; text: string }[] }
   rewards: { referral_note: string; warranty_days: number }
   homepage: HomepageSettings
