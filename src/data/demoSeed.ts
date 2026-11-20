@@ -318,6 +318,8 @@ export const demoSettings = {
     hero_headline: 'Unlock a World of Premium Entertainment & More!',
     hero_subtitle: 'Premium Subscriptions — All in One Place',
     hero_cta: 'Explore Subscriptions',
+    hero_secondary_cta: 'View Special Offers',
+    hero_secondary_link: '/offers',
     hero_banner: '/brand/nexora-banner.png',
   },
   contact: {
@@ -341,6 +343,13 @@ export const demoSettings = {
     description:
       "Bangladesh's premium digital subscription store: OTT, AI tools, education, software and gaming. Instant delivery with verified manual payments.",
     keywords: 'netflix bangladesh, chatgpt plus bd, buy subscription bd, bkash subscription store',
+    og_title: 'NEXORA — Premium Subscriptions, All in One Place',
+    og_description: "Bangladesh's premium digital subscription store for OTT, AI tools, education and software.",
+    og_image: '/brand/nexora-banner.png',
+  },
+  footer: {
+    description: 'Genuine premium plans delivered fast, with payments verified by real people across Bangladesh.',
+    copyright: 'NEXORA is an independent reseller; all trademarks belong to their respective owners.',
   },
   trust: {
     items: [
