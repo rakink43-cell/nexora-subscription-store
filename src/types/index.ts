@@ -268,6 +268,8 @@ export interface SiteSettings {
     hero_headline: string
     hero_subtitle: string
     hero_cta: string
+    hero_secondary_cta: string
+    hero_secondary_link: string
     hero_banner: string
   }
   contact: {
@@ -285,7 +287,8 @@ export interface SiteSettings {
     checkout_note: string
     support_note: string
   }
-  seo: { title: string; description: string; keywords: string }
+  seo: { title: string; description: string; keywords: string; og_title: string; og_description: string; og_image: string }
+  footer: { description: string; copyright: string }
   trust: { items: { title: string; text: string }[] }
   rewards: { referral_note: string; warranty_days: number }
   homepage: HomepageSettings
