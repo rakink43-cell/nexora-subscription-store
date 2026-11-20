@@ -13,7 +13,7 @@ export type OrderStatus =
   | 'cancelled'
   | 'refunded'
 
-export type PaymentMethod = 'bkash' | 'nagad' | 'bank_transfer'
+export type PaymentMethod = string
 export type PaymentStatus = 'pending' | 'submitted' | 'verified' | 'rejected'
 export type Availability = 'in_stock' | 'limited' | 'out_of_stock'
 export type CouponType = 'percentage' | 'fixed'
@@ -138,6 +138,7 @@ export interface OrderDetail {
 export interface PaymentMethodConfig {
   id: string
   method: PaymentMethod
+  method_key: string
   display_name: string
   account_name: string | null
   account_number: string
@@ -146,6 +147,11 @@ export interface PaymentMethodConfig {
   branch: string | null
   routing_number: string | null
   instructions: string | null
+  logo_url?: string | null
+  qr_image_url?: string | null
+  payment_type: 'manual' | 'gateway'
+  extra_details: Record<string, string>
+  requires_transaction_id: boolean
   is_active: boolean
   sort_order: number
 }
