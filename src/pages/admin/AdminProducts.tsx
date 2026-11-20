@@ -487,13 +487,55 @@ function ProductFormModal({
           />
         </Field>
 
-        <Field label="Additional gallery images" className="sm:col-span-2" hint="One image URL per line. The first image remains the main product image.">
+        <Field label="Additional gallery images" className="sm:col-span-2" hint="Upload multiple images or paste one image URL per line. Maximum 4 MB per image.">
           <Textarea
             value={(form.gallery ?? []).join('\n')}
             onChange={(e) => set('gallery', e.target.value.split('\n').map((url) => url.trim()).filter(Boolean))}
             className="min-h-[84px] font-mono text-[11px]"
             placeholder="https://example.com/product-image-2.webp\nhttps://example.com/product-image-3.webp"
           />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <label className="nx-btn nx-btn-ghost inline-flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-[11.5px]">
+              <Upload className="h-3 w-3" aria-hidden />
+              {uploading ? 'Uploading…' : 'Upload gallery images'}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                className="sr-only"
+                disabled={uploading}
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files ?? [])
+                  e.target.value = ''
+                  if (!files.length) return
+                  setUploading(true)
+                  try {
+                    const uploader = (api.admin as { uploadProductImage?: (f: File) => Promise<string> }).uploadProductImage
+                    if (!uploader) throw new Error('Image upload requires a connected Supabase project.')
+                    const urls: string[] = []
+                    for (const file of files) urls.push(await uploader(file))
+                    set('gallery', [...(form.gallery ?? []), ...urls])
+                    toast.success('Gallery images uploaded', `${urls.length} image(s) added`)
+                  } catch (err) {
+                    toast.error('Gallery upload failed', err instanceof Error ? err.message : undefined)
+                  } finally {
+                    setUploading(false)
+                  }
+                }}
+              />
+            </label>
+            <span className="text-[10.5px] text-white/35">{(form.gallery ?? []).length} additional image(s)</span>
+          </div>
+          {(form.gallery ?? []).length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {(form.gallery ?? []).map((url, index) => (
+                <div key={`${url}-${index}`} className="relative overflow-hidden rounded-lg border border-white/10">
+                  <img src={url} alt={`Gallery image ${index + 1}`} className="aspect-square w-full object-cover" />
+                  <button type="button" onClick={() => set('gallery', (form.gallery ?? []).filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded bg-black/75 px-1.5 py-0.5 text-[10px] text-white">Remove</button>
+                </div>
+              ))}
+            </div>
+          )}
         </Field>
 
         <Field label="Delivery information" className="sm:col-span-2">
