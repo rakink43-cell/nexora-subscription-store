@@ -275,8 +275,10 @@ export const catalogue = {
   },
 
   async promotions(): Promise<Promotion[]> {
+    const now = new Date().toISOString()
     return unwrap(
-      sb().from('promotions').select('*').eq('is_active', true).order('sort_order'),
+      sb().from('promotions').select('*').eq('is_active', true).lte('starts_at', now)
+        .or(`ends_at.is.null,ends_at.gt.${now}`).order('sort_order'),
     ) as Promise<Promotion[]>
   },
 
@@ -689,6 +691,9 @@ export const admin = {
       title: input.title,
       subtitle: input.subtitle,
       description: input.description,
+      image_url: input.image_url ?? null,
+      starts_at: input.starts_at ?? new Date().toISOString(),
+      ends_at: input.ends_at ?? null,
       badge: input.badge,
       cta_label: input.cta_label,
       cta_link: input.cta_link,
