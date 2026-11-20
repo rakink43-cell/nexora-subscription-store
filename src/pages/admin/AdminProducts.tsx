@@ -42,6 +42,7 @@ const EMPTY: Partial<Product> = {
   short_description: '',
   description: '',
   image_url: '',
+  gallery: [],
   duration: '1 Month',
   original_price: 0,
   discounted_price: 0,
@@ -483,6 +484,15 @@ function ProductFormModal({
             onChange={(e) => set('description', e.target.value)}
             className="min-h-[96px]"
             placeholder="What the customer gets, device support, activation model…"
+          />
+        </Field>
+
+        <Field label="Additional gallery images" className="sm:col-span-2" hint="One image URL per line. The first image remains the main product image.">
+          <Textarea
+            value={(form.gallery ?? []).join('\n')}
+            onChange={(e) => set('gallery', e.target.value.split('\n').map((url) => url.trim()).filter(Boolean))}
+            className="min-h-[84px] font-mono text-[11px]"
+            placeholder="https://example.com/product-image-2.webp\nhttps://example.com/product-image-3.webp"
           />
         </Field>
 
