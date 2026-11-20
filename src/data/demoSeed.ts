@@ -321,6 +321,7 @@ export const demoSettings = {
     hero_secondary_cta: 'View Special Offers',
     hero_secondary_link: '/offers',
     hero_banner: '/brand/nexora-banner.png',
+    hero_slides: [],
   },
   contact: {
     whatsapp: '+8801575864415',
@@ -350,6 +351,10 @@ export const demoSettings = {
   footer: {
     description: 'Genuine premium plans delivered fast, with payments verified by real people across Bangladesh.',
     copyright: 'NEXORA is an independent reseller; all trademarks belong to their respective owners.',
+    product_links: [{ label: 'All Products', to: '/products' }, { label: 'Special Offers', to: '/offers' }],
+    company_links: [{ label: 'About Us', to: '/about' }, { label: 'Contact Us', to: '/contact' }, { label: 'FAQ', to: '/faq' }, { label: 'Track Order', to: '/track' }],
+    legal_links: [{ label: 'Privacy Policy', to: '/privacy' }, { label: 'Terms & Conditions', to: '/terms' }, { label: 'Refund Policy', to: '/refund' }],
+    social_links: { facebook: '', instagram: '', youtube: '', tiktok: '' },
   },
   trust: {
     items: [
