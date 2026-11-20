@@ -37,6 +37,7 @@ export default function AdminSettings() {
         seo: form.seo,
         trust: form.trust,
         rewards: form.rewards,
+        footer: form.footer,
       })
       toast.success('Settings saved', 'Storefront updated immediately.')
       await reload()
@@ -156,6 +157,9 @@ export default function AdminSettings() {
             </Field>
             <Field label="Secondary button label"><Input value={form.site.hero_secondary_cta} onChange={(e) => patch('site', { hero_secondary_cta: e.target.value })} /></Field>
             <Field label="Secondary button destination" hint="Use an internal path such as /offers or /products"><Input value={form.site.hero_secondary_link} onChange={(e) => patch('site', { hero_secondary_link: e.target.value })} /></Field>
+            <Field label="Additional hero slider images" hint="One image URL per line. The main banner above remains the fallback.">
+              <Textarea className="min-h-[100px] font-mono text-[11px]" value={(form.site.hero_slides ?? []).join('\n')} onChange={(e) => patch('site', { hero_slides: e.target.value.split('\n').map((url) => url.trim()).filter(Boolean) })} placeholder="https://example.com/banner-2.webp\nhttps://example.com/banner-3.webp" />
+            </Field>
             <Field label="Banner image path or URL" hint="Upload a JPG, PNG or WEBP image (max 4 MB), or paste an image URL.">
               <Input value={form.site.hero_banner} onChange={(e) => patch('site', { hero_banner: e.target.value })} />
             </Field>
@@ -432,6 +436,21 @@ export default function AdminSettings() {
             <Field label="Copyright / legal note">
               <Textarea className="min-h-[75px]" value={form.footer.copyright} onChange={(e) => patch('footer', { copyright: e.target.value })} />
             </Field>
+            <Field label="Product links" hint="One per line: Label | /internal-path">
+              <Textarea className="min-h-[80px] font-mono text-[11px]" value={(form.footer.product_links ?? []).map((x) => `${x.label} | ${x.to}`).join('\n')} onChange={(e) => patch('footer', { product_links: e.target.value.split('\n').map((line) => { const [label, ...to] = line.split('|'); return { label: label.trim(), to: to.join('|').trim() } }).filter((x) => x.label && x.to) })} />
+            </Field>
+            <Field label="Company links" hint="One per line: Label | /internal-path">
+              <Textarea className="min-h-[80px] font-mono text-[11px]" value={(form.footer.company_links ?? []).map((x) => `${x.label} | ${x.to}`).join('\n')} onChange={(e) => patch('footer', { company_links: e.target.value.split('\n').map((line) => { const [label, ...to] = line.split('|'); return { label: label.trim(), to: to.join('|').trim() } }).filter((x) => x.label && x.to) })} />
+            </Field>
+            <Field label="Legal links" hint="One per line: Label | /internal-path">
+              <Textarea className="min-h-[80px] font-mono text-[11px]" value={(form.footer.legal_links ?? []).map((x) => `${x.label} | ${x.to}`).join('\n')} onChange={(e) => patch('footer', { legal_links: e.target.value.split('\n').map((line) => { const [label, ...to] = line.split('|'); return { label: label.trim(), to: to.join('|').trim() } }).filter((x) => x.label && x.to) })} />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Facebook URL"><Input value={form.footer.social_links?.facebook ?? ''} onChange={(e) => patch('footer', { social_links: { ...form.footer.social_links, facebook: e.target.value } })} /></Field>
+              <Field label="Instagram URL"><Input value={form.footer.social_links?.instagram ?? ''} onChange={(e) => patch('footer', { social_links: { ...form.footer.social_links, instagram: e.target.value } })} /></Field>
+              <Field label="YouTube URL"><Input value={form.footer.social_links?.youtube ?? ''} onChange={(e) => patch('footer', { social_links: { ...form.footer.social_links, youtube: e.target.value } })} /></Field>
+              <Field label="TikTok URL"><Input value={form.footer.social_links?.tiktok ?? ''} onChange={(e) => patch('footer', { social_links: { ...form.footer.social_links, tiktok: e.target.value } })} /></Field>
+            </div>
           </div>
         </AdminCard>
       )}
