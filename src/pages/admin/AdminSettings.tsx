@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Building2, Globe, Megaphone, Plus, Save, Trash2, Wallet } from 'lucide-react'
+import { Building2, Globe, Megaphone, Plus, Save, Trash2, Upload, Wallet } from 'lucide-react'
 import { api, isDemoMode } from '../../lib/api'
 import { AdminCard, AdminHeader } from '../../components/admin/AdminUI'
 import { Button, ErrorNote, Field, Input, Tabs, Tab, Textarea } from '../../components/ui'
@@ -14,6 +14,7 @@ export default function AdminSettings() {
   const [form, setForm] = useState<SiteSettings>(settings)
   const [methods, setMethods] = useState<PaymentMethodConfig[]>(paymentMethods)
   const [saving, setSaving] = useState(false)
+  const [bannerUploading, setBannerUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [newMethod, setNewMethod] = useState({ method_key: '', display_name: '', account_number: '', account_name: '', account_type: 'Personal', instructions: '', payment_type: 'manual' as 'manual' | 'gateway', requires_transaction_id: true })
 
@@ -36,6 +37,7 @@ export default function AdminSettings() {
         seo: form.seo,
         trust: form.trust,
         rewards: form.rewards,
+        footer: form.footer,
       })
       toast.success('Settings saved', 'Storefront updated immediately.')
       await reload()
@@ -91,6 +93,7 @@ export default function AdminSettings() {
         <Tab value="payment">Payment</Tab>
         <Tab value="notices">Notices</Tab>
         <Tab value="seo">SEO</Tab>
+        <Tab value="footer">Footer</Tab>
       </Tabs>
 
       {tab === 'site' && (
@@ -152,9 +155,44 @@ export default function AdminSettings() {
             <Field label="Primary button label">
               <Input value={form.site.hero_cta} onChange={(e) => patch('site', { hero_cta: e.target.value })} />
             </Field>
-            <Field label="Banner image path or URL" hint="Leave as /brand/nexora-banner.png to use the official banner">
+            <Field label="Secondary button label"><Input value={form.site.hero_secondary_cta} onChange={(e) => patch('site', { hero_secondary_cta: e.target.value })} /></Field>
+            <Field label="Secondary button destination" hint="Use an internal path such as /offers or /products"><Input value={form.site.hero_secondary_link} onChange={(e) => patch('site', { hero_secondary_link: e.target.value })} /></Field>
+            <Field label="Additional hero slider images" hint="One image URL per line. The main banner above remains the fallback.">
+              <Textarea className="min-h-[100px] font-mono text-[11px]" value={(form.site.hero_slides ?? []).join('\n')} onChange={(e) => patch('site', { hero_slides: e.target.value.split('\n').map((url) => url.trim()).filter(Boolean) })} placeholder="https://example.com/banner-2.webp\nhttps://example.com/banner-3.webp" />
+            </Field>
+            <Field label="Banner image path or URL" hint="Upload a JPG, PNG or WEBP image (max 4 MB), or paste an image URL.">
               <Input value={form.site.hero_banner} onChange={(e) => patch('site', { hero_banner: e.target.value })} />
             </Field>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="nx-btn nx-btn-ghost inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-[11.5px]">
+                <Upload className="h-3.5 w-3.5" aria-hidden />
+                {bannerUploading ? 'Uploading banner…' : 'Upload banner image'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  disabled={bannerUploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    e.target.value = ''
+                    if (!file) return
+                    setBannerUploading(true)
+                    try {
+                      const uploader = (api.admin as { uploadProductImage?: (file: File) => Promise<string> }).uploadProductImage
+                      if (!uploader) throw new Error('Image upload requires a connected Supabase project.')
+                      const url = await uploader(file)
+                      patch('site', { hero_banner: url })
+                      toast.success('Banner uploaded', 'Save changes to publish it on the homepage.')
+                    } catch (err) {
+                      toast.error('Banner upload failed', err instanceof Error ? err.message : undefined)
+                    } finally {
+                      setBannerUploading(false)
+                    }
+                  }}
+                />
+              </label>
+              <span className="text-[10.5px] text-white/40">Recommended: wide landscape image</span>
+            </div>
             {form.site.hero_banner && (
               <div className="overflow-hidden rounded-lg border border-white/10">
                 <img src={form.site.hero_banner} alt="Banner preview" className="w-full object-cover" />
@@ -373,6 +411,9 @@ export default function AdminSettings() {
             <Field label="Keywords">
               <Input value={form.seo.keywords} onChange={(e) => patch('seo', { keywords: e.target.value })} />
             </Field>
+            <Field label="Social share title"><Input value={form.seo.og_title} onChange={(e) => patch('seo', { og_title: e.target.value })} /></Field>
+            <Field label="Social share description"><Textarea value={form.seo.og_description} onChange={(e) => patch('seo', { og_description: e.target.value })} className="min-h-[70px]" /></Field>
+            <Field label="Social share image URL"><Input value={form.seo.og_image} onChange={(e) => patch('seo', { og_image: e.target.value })} /></Field>
           </div>
           <div className="mt-4 rounded-lg border border-white/8 bg-white/[0.02] p-3">
             <p className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-white/35">
@@ -382,6 +423,34 @@ export default function AdminSettings() {
             <p className="mt-1.5 text-[13px] text-[#8AB4F8]">{form.seo.title}</p>
             <p className="text-[11px] text-emerald-500/80">nexora.store</p>
             <p className="mt-0.5 line-clamp-2 text-[11.5px] text-white/50">{form.seo.description}</p>
+          </div>
+        </AdminCard>
+      )}
+
+      {tab === 'footer' && (
+        <AdminCard title="Footer content" description="Edit the brand description and copyright note shown at the bottom of every page.">
+          <div className="space-y-3">
+            <Field label="Footer brand description">
+              <Textarea className="min-h-[90px]" value={form.footer.description} onChange={(e) => patch('footer', { description: e.target.value })} />
+            </Field>
+            <Field label="Copyright / legal note">
+              <Textarea className="min-h-[75px]" value={form.footer.copyright} onChange={(e) => patch('footer', { copyright: e.target.value })} />
+            </Field>
+            <Field label="Product links" hint="One per line: Label | /internal-path">
+              <Textarea className="min-h-[80px] font-mono text-[11px]" value={(form.footer.product_links ?? []).map((x) => `${x.label} | ${x.to}`).join('\n')} onChange={(e) => patch('footer', { product_links: e.target.value.split('\n').map((line) => { const [label, ...to] = line.split('|'); return { label: label.trim(), to: to.join('|').trim() } }).filter((x) => x.label && x.to) })} />
+            </Field>
+            <Field label="Company links" hint="One per line: Label | /internal-path">
+              <Textarea className="min-h-[80px] font-mono text-[11px]" value={(form.footer.company_links ?? []).map((x) => `${x.label} | ${x.to}`).join('\n')} onChange={(e) => patch('footer', { company_links: e.target.value.split('\n').map((line) => { const [label, ...to] = line.split('|'); return { label: label.trim(), to: to.join('|').trim() } }).filter((x) => x.label && x.to) })} />
+            </Field>
+            <Field label="Legal links" hint="One per line: Label | /internal-path">
+              <Textarea className="min-h-[80px] font-mono text-[11px]" value={(form.footer.legal_links ?? []).map((x) => `${x.label} | ${x.to}`).join('\n')} onChange={(e) => patch('footer', { legal_links: e.target.value.split('\n').map((line) => { const [label, ...to] = line.split('|'); return { label: label.trim(), to: to.join('|').trim() } }).filter((x) => x.label && x.to) })} />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Facebook URL"><Input value={form.footer.social_links?.facebook ?? ''} onChange={(e) => patch('footer', { social_links: { ...form.footer.social_links, facebook: e.target.value } })} /></Field>
+              <Field label="Instagram URL"><Input value={form.footer.social_links?.instagram ?? ''} onChange={(e) => patch('footer', { social_links: { ...form.footer.social_links, instagram: e.target.value } })} /></Field>
+              <Field label="YouTube URL"><Input value={form.footer.social_links?.youtube ?? ''} onChange={(e) => patch('footer', { social_links: { ...form.footer.social_links, youtube: e.target.value } })} /></Field>
+              <Field label="TikTok URL"><Input value={form.footer.social_links?.tiktok ?? ''} onChange={(e) => patch('footer', { social_links: { ...form.footer.social_links, tiktok: e.target.value } })} /></Field>
+            </div>
           </div>
         </AdminCard>
       )}

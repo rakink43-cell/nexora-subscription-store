@@ -275,8 +275,10 @@ export const catalogue = {
   },
 
   async promotions(): Promise<Promotion[]> {
+    const now = new Date().toISOString()
     return unwrap(
-      sb().from('promotions').select('*').eq('is_active', true).order('sort_order'),
+      sb().from('promotions').select('*').eq('is_active', true).lte('starts_at', now)
+        .or(`ends_at.is.null,ends_at.gt.${now}`).order('sort_order'),
     ) as Promise<Promotion[]>
   },
 
@@ -449,6 +451,36 @@ export const support = {
 
 /* --------------------------------- admin --------------------------------- */
 export const admin = {
+  async analytics() {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    const [eventResult, profileResult] = await Promise.all([
+      sb().from('analytics_events').select('event_name,path,metadata,created_at').gte('created_at', since).order('created_at', { ascending: true }).limit(5000),
+      sb().from('profiles').select('created_at').gte('created_at', since),
+    ])
+    if (eventResult.error) fail(eventResult.error, 'Could not load analytics.')
+    if (profileResult.error) fail(profileResult.error, 'Could not load account signups.')
+    const events = eventResult.data ?? []
+    const profiles = profileResult.data ?? []
+    const views = events.filter((event) => event.event_name === 'page_view')
+    const visitors = new Set(views.map((event) => (event.metadata as Record<string, unknown>)?.visitor_id).filter((id): id is string => typeof id === 'string'))
+    const daily = Array.from({ length: 14 }, (_, index) => {
+      const day = new Date()
+      day.setDate(day.getDate() - (13 - index))
+      const key = day.toISOString().slice(0, 10)
+      return {
+        day: key,
+        views: views.filter((event) => event.created_at.slice(0, 10) === key).length,
+        signups: profiles.filter((profile) => profile.created_at.slice(0, 10) === key).length,
+      }
+    })
+    const pages = Object.entries(views.reduce<Record<string, number>>((acc, event) => {
+      const path = event.path || '/'
+      acc[path] = (acc[path] ?? 0) + 1
+      return acc
+    }, {})).map(([path, count]) => ({ path, count })).sort((a, b) => b.count - a.count).slice(0, 8)
+    return { page_views: views.length, visitors: visitors.size, signups: profiles.length, daily, pages }
+  },
+
   async stats(): Promise<DashboardStats> {
     const { data, error } = await sb().rpc('admin_dashboard_stats')
     if (error) fail(error, 'Admin access required.')
@@ -554,6 +586,7 @@ export const admin = {
       short_description: input.short_description,
       description: input.description,
       image_url: input.image_url,
+      gallery: input.gallery ?? [],
       duration: input.duration,
       original_price: input.original_price,
       discounted_price: input.discounted_price,
@@ -601,6 +634,7 @@ export const admin = {
       slug: input.slug,
       description: input.description,
       icon: input.icon,
+      image_url: input.image_url ?? null,
       accent: input.accent,
       sort_order: input.sort_order,
       is_active: input.is_active,
@@ -687,6 +721,9 @@ export const admin = {
       title: input.title,
       subtitle: input.subtitle,
       description: input.description,
+      image_url: input.image_url ?? null,
+      starts_at: input.starts_at ?? new Date().toISOString(),
+      ends_at: input.ends_at ?? null,
       badge: input.badge,
       cta_label: input.cta_label,
       cta_link: input.cta_link,

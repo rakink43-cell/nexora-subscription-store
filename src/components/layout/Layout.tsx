@@ -5,10 +5,19 @@ import { Header } from './Header'
 import { Footer } from './Footer'
 import { useStore } from '../../context/SettingsContext'
 import { contactLink } from '../../lib/utils'
-import { getDataSource } from '../../lib/api'
+import { getDataSource, trackEvent } from '../../lib/api'
 
 export function Layout() {
   const { pathname } = useLocation()
+
+  useEffect(() => {
+    let visitorId = sessionStorage.getItem('nexora.analyticsVisitor')
+    if (!visitorId) {
+      visitorId = window.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
+      sessionStorage.setItem('nexora.analyticsVisitor', visitorId)
+    }
+    void trackEvent('page_view', { visitor_id: visitorId })
+  }, [pathname])
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })

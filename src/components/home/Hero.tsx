@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, BadgeCheck, Headphones, ShieldCheck, Zap } from 'lucide-react'
 import { useStore } from '../../context/SettingsContext'
@@ -7,13 +8,23 @@ import { cn } from '../../lib/utils'
 export function Hero() {
   const { settings } = useStore()
   const site = settings.site
+  const slides = [site.hero_banner, ...(site.hero_slides ?? [])].filter((url): url is string => Boolean(url))
+  const [slideIndex, setSlideIndex] = useState(0)
+  const activeImage = slides.length ? slides[slideIndex % slides.length] : '/brand/nexora-banner.png'
+
+  useEffect(() => { setSlideIndex(0) }, [slides.join('|')])
+  useEffect(() => {
+    if (slides.length < 2) return
+    const timer = window.setInterval(() => setSlideIndex((index) => (index + 1) % slides.length), 5000)
+    return () => window.clearInterval(timer)
+  }, [slides.length])
 
   return (
     <section className="relative isolate overflow-hidden" aria-label="Featured">
       {/* cinematic background using the official promotional banner */}
       <div className="absolute inset-0 -z-10">
         <img
-          src={site.hero_banner || '/brand/nexora-banner.png'}
+          src={activeImage}
           alt=""
           aria-hidden
           className="h-full w-full object-cover object-center opacity-[0.32]"
@@ -37,38 +48,25 @@ export function Hero() {
           </div>
 
           <h1 className="font-display text-[clamp(1.9rem,5.4vw,3.9rem)] font-extrabold leading-[1.06] tracking-tight text-white">
-            Unlock a World of{' '}
-            <span className="relative whitespace-nowrap">
-              <span className="nx-gradient-text">Premium Entertainment</span>
-              <svg
-                className="absolute -bottom-1.5 left-0 h-2 w-full text-[#F00016]/70"
-                viewBox="0 0 200 8"
-                preserveAspectRatio="none"
-                aria-hidden
-              >
-                <path d="M0 6 Q 50 0 100 5 T 200 3" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-              </svg>
-            </span>{' '}
-            &amp; More!
+            <span className="nx-gradient-text">{site.hero_headline || 'Unlock a World of Premium Entertainment & More!'}</span>
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-white/55 sm:text-base">
-            Premium Subscriptions — All in One Place. OTT, AI tools, education, software and gaming
-            delivered fast, verified by real people, backed by a 30-day replacement warranty.
+            {site.hero_subtitle || 'Premium Subscriptions — All in One Place. OTT, AI tools, education, software and gaming delivered fast.'}
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <ButtonLink to="/products" size="lg" className="w-full sm:w-auto" icon={<Zap className="h-4 w-4" />}>
-              Explore Subscriptions
+              {site.hero_cta || 'Explore Subscriptions'}
             </ButtonLink>
             <ButtonLink
-              to="/offers"
+              to={site.hero_secondary_link || '/offers'}
               variant="ghost"
               size="lg"
               className="w-full sm:w-auto"
               icon={<ArrowRight className="h-4 w-4" />}
             >
-              View Special Offers
+              {site.hero_secondary_cta || 'View Special Offers'}
             </ButtonLink>
           </div>
 
@@ -104,6 +102,13 @@ export function Hero() {
             className="w-full object-cover transition duration-700 group-hover:scale-[1.01]"
             loading="eager"
           />
+          {slides.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1.5 backdrop-blur">
+              {slides.map((slide, index) => (
+                <button key={`${slide}-${index}`} type="button" onClick={() => setSlideIndex(index)} aria-label={`Show banner ${index + 1}`} aria-current={slideIndex === index ? 'true' : undefined} className={slideIndex === index ? 'h-2 w-5 rounded-full bg-[#6EC1FF]' : 'h-2 w-2 rounded-full bg-white/45 hover:bg-white/80'} />
+              ))}
+            </div>
+          )}
           <div className={cn('pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10')} aria-hidden />
           <Link
             to="/products"

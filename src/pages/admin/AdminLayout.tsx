@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   LayoutDashboard,
   LifeBuoy,
+  LayoutTemplate,
   LogOut,
   Menu,
   MessageSquareQuote,
@@ -29,7 +30,7 @@ import type { Notification } from '../../types'
 const NAV: { section: string; items: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean }[] }[] = [
   {
     section: 'Overview',
-    items: [{ to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true }],
+    items: [{ to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true }, { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 }],
   },
   {
     section: 'Commerce',
@@ -51,6 +52,7 @@ const NAV: { section: string; items: { to: string; label: string; icon: typeof L
   {
     section: 'Website',
     items: [
+      { to: '/admin/homepage', label: 'Homepage editor', icon: LayoutTemplate },
       { to: '/admin/promotions', label: 'Promotions', icon: Sparkles },
       { to: '/admin/content', label: 'Content & FAQ', icon: MessageSquareQuote },
       { to: '/admin/settings', label: 'Settings', icon: Settings },

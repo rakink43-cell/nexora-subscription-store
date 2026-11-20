@@ -33,11 +33,13 @@ import NotFoundPage from './pages/NotFoundPage'
 /* Admin bundle is code-split so storefront visitors never download it. */
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'))
 const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'))
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'))
 const AdminCustomers = lazy(() => import('./pages/admin/AdminCustomers'))
 const AdminPromotions = lazy(() => import('./pages/admin/AdminPromotions'))
+const AdminHomepage = lazy(() => import('./pages/admin/AdminHomepage'))
 const AdminCoupons = lazy(() => import('./pages/admin/AdminCoupons'))
 const AdminContent = lazy(() => import('./pages/admin/AdminContent'))
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
@@ -113,6 +115,10 @@ export default function App() {
                       }
                     />
                     <Route
+                      path="analytics"
+                      element={<Suspense fallback={<PageFallback />}><AdminAnalytics /></Suspense>}
+                    />
+                    <Route
                       path="products"
                       element={
                         <Suspense fallback={<PageFallback />}>
@@ -141,6 +147,14 @@ export default function App() {
                       element={
                         <Suspense fallback={<PageFallback />}>
                           <AdminCustomers />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="homepage"
+                      element={
+                        <Suspense fallback={<PageFallback />}>
+                          <AdminHomepage />
                         </Suspense>
                       }
                     />

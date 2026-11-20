@@ -42,6 +42,7 @@ const EMPTY: Partial<Product> = {
   short_description: '',
   description: '',
   image_url: '',
+  gallery: [],
   duration: '1 Month',
   original_price: 0,
   discounted_price: 0,
@@ -67,6 +68,9 @@ export default function AdminProducts() {
   const [editing, setEditing] = useState<(Partial<Product> & { isNew?: boolean }) | null>(null)
   const [deleting, setDeleting] = useState<Product | null>(null)
   const [busy, setBusy] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [bulkAvailability, setBulkAvailability] = useState('in_stock')
+  const [pricePercent, setPricePercent] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -111,6 +115,127 @@ export default function AdminProducts() {
     }
   }
 
+  const toggleSelected = (id: string) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
+
+  const applyBulk = async (patch: Partial<Product>) => {
+    const targets = products.filter((product) => selectedIds.includes(product.id))
+    if (!targets.length) return
+    setBusy(true)
+    try {
+      for (const product of targets) await api.admin.saveProduct({ ...product, ...patch })
+      toast.success('Bulk update complete', targets.length + ' product(s) updated')
+      setSelectedIds([])
+      await load()
+    } catch (err) {
+      toast.error('Bulk update stopped', err instanceof Error ? err.message : undefined)
+      await load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const applyPriceChange = async () => {
+    const percent = Number(pricePercent)
+    if (!Number.isFinite(percent) || percent < -90 || percent > 500) {
+      toast.error('Enter a percentage between -90 and 500.')
+      return
+    }
+    const targets = products.filter((product) => selectedIds.includes(product.id))
+    if (!targets.length) return
+    setBusy(true)
+    try {
+      for (const product of targets) {
+        const original = Math.max(0, Math.round(Number(product.original_price) * (1 + percent / 100)))
+        const discounted = Math.max(0, Math.round(Number(product.discounted_price) * (1 + percent / 100)))
+        await api.admin.saveProduct({ ...product, original_price: original, discounted_price: discounted })
+      }
+      toast.success('Bulk pricing updated', targets.length + ' product(s) updated')
+      setSelectedIds([])
+      setPricePercent('')
+      await load()
+    } catch (err) {
+      toast.error('Pricing update stopped', err instanceof Error ? err.message : undefined)
+      await load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const exportCsv = () => {
+    const quote = (value: unknown) => '"' + String(value ?? '').replace(/"/g, '""') + '"'
+    const rows = [
+      ['name', 'slug', 'brand', 'original_price', 'discounted_price', 'availability', 'is_active', 'is_featured'],
+      ...filtered.map((product) => [product.name, product.slug, product.brand, product.original_price, product.discounted_price, product.availability, product.is_active, product.is_featured]),
+    ]
+    const csv = rows.map((row) => row.map(quote).join(',')).join('\r\n')
+    const url = URL.createObjectURL(new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }))
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = 'nexora-products.csv'
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const parseCsvRow = (line: string) => {
+    const cells: string[] = []
+    let value = ''
+    let quoted = false
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i]
+      if (char === '"' && quoted && line[i + 1] === '"') { value += '"'; i++ }
+      else if (char === '"') quoted = !quoted
+      else if (char === ',' && !quoted) { cells.push(value); value = '' }
+      else value += char
+    }
+    cells.push(value)
+    return cells
+  }
+
+  const importCsv = async (file?: File) => {
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { toast.error('CSV must be smaller than 2 MB.'); return }
+    const text = await file.text()
+    const lines = text.replace(/^\\uFEFF/, '').split(/\\r?\\n/).filter((line) => line.trim())
+    if (lines.length < 2) { toast.error('CSV has no product rows.'); return }
+    const headers = parseCsvRow(lines[0]).map((header) => header.trim().toLowerCase())
+    const required = ['slug', 'original_price', 'discounted_price']
+    if (!required.every((header) => headers.includes(header))) {
+      toast.error('CSV must include slug, original_price and discounted_price columns.')
+      return
+    }
+    const index = (name: string) => headers.indexOf(name)
+    const bySlug = new Map(products.map((product) => [product.slug, product]))
+    const updates = lines.slice(1).map((line) => parseCsvRow(line)).filter((cells) => cells.length === headers.length)
+    const matched = updates.map((cells) => ({ cells, product: bySlug.get(cells[index('slug')].trim()) })).filter((row) => row.product)
+    if (!matched.length) { toast.error('No matching product slugs found. Nothing imported.'); return }
+    setBusy(true)
+    let count = 0
+    try {
+      for (const { cells, product } of matched) {
+        const original = Number(cells[index('original_price')])
+        const discounted = Number(cells[index('discounted_price')])
+        if (!Number.isFinite(original) || !Number.isFinite(discounted) || original < 0 || discounted < 0) continue
+        await api.admin.saveProduct({
+          ...product!,
+          original_price: original,
+          discounted_price: discounted,
+          ...(index('brand') >= 0 ? { brand: cells[index('brand')] || null } : {}),
+          ...(index('availability') >= 0 ? { availability: cells[index('availability')] as Product['availability'] } : {}),
+          ...(index('is_active') >= 0 ? { is_active: cells[index('is_active')].toLowerCase() === 'true' } : {}),
+          ...(index('is_featured') >= 0 ? { is_featured: cells[index('is_featured')].toLowerCase() === 'true' } : {}),
+        })
+        count++
+      }
+      toast.success('CSV import complete', count + ' product(s) updated by matching slug')
+      await load()
+    } catch (err) {
+      toast.error('CSV import stopped', err instanceof Error ? err.message : undefined)
+      await load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const duplicate = async (product: Product) => {
     try {
       await api.admin.saveProduct({
@@ -145,6 +270,14 @@ export default function AdminProducts() {
 
       {error && <ErrorNote message={error} className="mb-4" />}
 
+      <div className="mb-3 flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" onClick={exportCsv} icon={<Upload className="h-3.5 w-3.5 rotate-180" />}>Export CSV</Button>
+        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-[11px] font-semibold text-white/70 hover:bg-white/5">
+          <Upload className="h-3.5 w-3.5" /> Import CSV
+          <input type="file" accept=".csv,text/csv" className="hidden" disabled={busy} onChange={(event) => { void importCsv(event.target.files?.[0]); event.currentTarget.value = '' }} />
+        </label>
+      </div>
+
       <div className="mb-3 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" aria-hidden />
@@ -169,6 +302,26 @@ export default function AdminProducts() {
         </Select>
       </div>
 
+      {selectedIds.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-[#168BFF]/25 bg-[#168BFF]/[0.07] p-3">
+          <span className="mr-1 text-[11px] font-semibold text-white">{selectedIds.length} selected</span>
+          <Button size="sm" variant="subtle" loading={busy} onClick={() => void applyBulk({ is_active: true })}>Show</Button>
+          <Button size="sm" variant="subtle" loading={busy} onClick={() => void applyBulk({ is_active: false })}>Hide</Button>
+          <Button size="sm" variant="subtle" loading={busy} onClick={() => void applyBulk({ is_featured: true })}>Feature</Button>
+          <Button size="sm" variant="subtle" loading={busy} onClick={() => void applyBulk({ is_featured: false })}>Unfeature</Button>
+          <Select value={bulkAvailability} onChange={(e) => setBulkAvailability(e.target.value)} className="w-36 py-1.5 text-[11px]">
+            <option value="in_stock">In stock</option>
+            <option value="limited">Limited</option>
+            <option value="out_of_stock">Out of stock</option>
+          </Select>
+          <Button size="sm" loading={busy} onClick={() => void applyBulk({ availability: bulkAvailability as Product['availability'] })}>Apply stock</Button>
+          <div className="flex items-center gap-1.5">
+            <Input value={pricePercent} onChange={(e) => setPricePercent(e.target.value)} placeholder="% e.g. 10 or -5" className="w-28 py-1.5 text-[11px]" aria-label="Bulk price percentage change" />
+            <Button size="sm" loading={busy} disabled={!pricePercent.trim()} onClick={() => void applyPriceChange()}>Adjust prices</Button>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>Clear</Button>
+        </div>
+      )}
       <AdminCard bodyClassName="p-4">
         {loading ? (
           <div className="space-y-2">
@@ -181,12 +334,18 @@ export default function AdminProducts() {
             <p className="mt-0.5 text-[11.5px] text-white/35">Add your first product to start selling.</p>
           </div>
         ) : (
-          <AdminTable head={['Product', 'Category', 'Price', 'Discount', 'Stock', 'Flags', '']}>
+          <>
+          <div className="mb-2 flex items-center gap-2">
+            <input type="checkbox" checked={filtered.length > 0 && filtered.every((product) => selectedIds.includes(product.id))} onChange={(e) => setSelectedIds(e.target.checked ? filtered.map((product) => product.id) : [])} aria-label="Select all filtered products" className="h-4 w-4 accent-[#168BFF]" />
+            <span className="text-[10.5px] text-white/40">Select all {filtered.length} filtered products</span>
+          </div>
+          <AdminTable head={['Select', 'Product', 'Category', 'Price', 'Discount', 'Stock', 'Flags', '']}>
             {filtered.map((p) => {
               const off = discountPercent(Number(p.original_price), Number(p.discounted_price))
               const availability = AVAILABILITY_META[p.availability]
               return (
                 <tr key={p.id} className="transition hover:bg-white/[0.02]">
+                  <td className="px-2 py-2.5"><input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelected(p.id)} aria-label={`Select ${p.name}`} className="h-4 w-4 accent-[#168BFF]" /></td>
                   <td className="py-2.5 pr-2.5 first:pl-0">
                     <div className="flex items-center gap-2.5">
                       <div className="grid h-9 w-11 shrink-0 place-items-center overflow-hidden rounded bg-gradient-to-br from-[#0B63C5] to-[#071B33] text-[9px] font-bold text-white">
@@ -276,6 +435,7 @@ export default function AdminProducts() {
               )
             })}
           </AdminTable>
+          </>
         )}
       </AdminCard>
 
@@ -484,6 +644,57 @@ function ProductFormModal({
             className="min-h-[96px]"
             placeholder="What the customer gets, device support, activation model…"
           />
+        </Field>
+
+        <Field label="Additional gallery images" className="sm:col-span-2" hint="Upload multiple images or paste one image URL per line. Maximum 4 MB per image.">
+          <Textarea
+            value={(form.gallery ?? []).join('\n')}
+            onChange={(e) => set('gallery', e.target.value.split('\n').map((url) => url.trim()).filter(Boolean))}
+            className="min-h-[84px] font-mono text-[11px]"
+            placeholder="https://example.com/product-image-2.webp\nhttps://example.com/product-image-3.webp"
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <label className="nx-btn nx-btn-ghost inline-flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-[11.5px]">
+              <Upload className="h-3 w-3" aria-hidden />
+              {uploading ? 'Uploading…' : 'Upload gallery images'}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                className="sr-only"
+                disabled={uploading}
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files ?? [])
+                  e.target.value = ''
+                  if (!files.length) return
+                  setUploading(true)
+                  try {
+                    const uploader = (api.admin as { uploadProductImage?: (f: File) => Promise<string> }).uploadProductImage
+                    if (!uploader) throw new Error('Image upload requires a connected Supabase project.')
+                    const urls: string[] = []
+                    for (const file of files) urls.push(await uploader(file))
+                    set('gallery', [...(form.gallery ?? []), ...urls])
+                    toast.success('Gallery images uploaded', `${urls.length} image(s) added`)
+                  } catch (err) {
+                    toast.error('Gallery upload failed', err instanceof Error ? err.message : undefined)
+                  } finally {
+                    setUploading(false)
+                  }
+                }}
+              />
+            </label>
+            <span className="text-[10.5px] text-white/35">{(form.gallery ?? []).length} additional image(s)</span>
+          </div>
+          {(form.gallery ?? []).length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {(form.gallery ?? []).map((url, index) => (
+                <div key={`${url}-${index}`} className="relative overflow-hidden rounded-lg border border-white/10">
+                  <img src={url} alt={`Gallery image ${index + 1}`} className="aspect-square w-full object-cover" />
+                  <button type="button" onClick={() => set('gallery', (form.gallery ?? []).filter((_, i) => i !== index))} className="absolute right-1 top-1 rounded bg-black/75 px-1.5 py-0.5 text-[10px] text-white">Remove</button>
+                </div>
+              ))}
+            </div>
+          )}
         </Field>
 
         <Field label="Delivery information" className="sm:col-span-2">

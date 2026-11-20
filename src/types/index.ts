@@ -166,6 +166,8 @@ export interface Promotion {
   cta_label: string | null
   cta_link: string | null
   discount_text: string | null
+  starts_at?: string
+  ends_at?: string | null
   is_active: boolean
   sort_order: number
 }
@@ -231,6 +233,36 @@ export interface Notification {
   created_at: string
 }
 
+export type HomepageSectionId =
+  | 'hero'
+  | 'categories'
+  | 'best_selling'
+  | 'ott'
+  | 'ai'
+  | 'education'
+  | 'offers'
+  | 'why_choose'
+  | 'software'
+  | 'testimonials'
+  | 'faq'
+
+export interface HomepageSection {
+  id: HomepageSectionId
+  enabled: boolean
+  sort_order: number
+}
+
+export interface HomepageHeading {
+  eyebrow: string
+  title: string
+  subtitle: string
+}
+
+export interface HomepageSettings {
+  sections: HomepageSection[]
+  headings: Record<string, HomepageHeading>
+}
+
 export interface SiteSettings {
   site: {
     name: string
@@ -238,7 +270,10 @@ export interface SiteSettings {
     hero_headline: string
     hero_subtitle: string
     hero_cta: string
+    hero_secondary_cta: string
+    hero_secondary_link: string
     hero_banner: string
+    hero_slides: string[]
   }
   contact: {
     whatsapp: string
@@ -255,9 +290,18 @@ export interface SiteSettings {
     checkout_note: string
     support_note: string
   }
-  seo: { title: string; description: string; keywords: string }
+  seo: { title: string; description: string; keywords: string; og_title: string; og_description: string; og_image: string }
+  footer: {
+    description: string
+    copyright: string
+    product_links: { label: string; to: string }[]
+    company_links: { label: string; to: string }[]
+    legal_links: { label: string; to: string }[]
+    social_links: { facebook: string; instagram: string; youtube: string; tiktok: string }
+  }
   trust: { items: { title: string; text: string }[] }
   rewards: { referral_note: string; warranty_days: number }
+  homepage: HomepageSettings
 }
 
 export interface DashboardStats {

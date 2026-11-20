@@ -318,7 +318,10 @@ export const demoSettings = {
     hero_headline: 'Unlock a World of Premium Entertainment & More!',
     hero_subtitle: 'Premium Subscriptions — All in One Place',
     hero_cta: 'Explore Subscriptions',
+    hero_secondary_cta: 'View Special Offers',
+    hero_secondary_link: '/offers',
     hero_banner: '/brand/nexora-banner.png',
+    hero_slides: [],
   },
   contact: {
     whatsapp: '+8801575864415',
@@ -341,6 +344,17 @@ export const demoSettings = {
     description:
       "Bangladesh's premium digital subscription store: OTT, AI tools, education, software and gaming. Instant delivery with verified manual payments.",
     keywords: 'netflix bangladesh, chatgpt plus bd, buy subscription bd, bkash subscription store',
+    og_title: 'NEXORA — Premium Subscriptions, All in One Place',
+    og_description: "Bangladesh's premium digital subscription store for OTT, AI tools, education and software.",
+    og_image: '/brand/nexora-banner.png',
+  },
+  footer: {
+    description: 'Genuine premium plans delivered fast, with payments verified by real people across Bangladesh.',
+    copyright: 'NEXORA is an independent reseller; all trademarks belong to their respective owners.',
+    product_links: [{ label: 'All Products', to: '/products' }, { label: 'Special Offers', to: '/offers' }],
+    company_links: [{ label: 'About Us', to: '/about' }, { label: 'Contact Us', to: '/contact' }, { label: 'FAQ', to: '/faq' }, { label: 'Track Order', to: '/track' }],
+    legal_links: [{ label: 'Privacy Policy', to: '/privacy' }, { label: 'Terms & Conditions', to: '/terms' }, { label: 'Refund Policy', to: '/refund' }],
+    social_links: { facebook: '', instagram: '', youtube: '', tiktok: '' },
   },
   trust: {
     items: [
@@ -353,5 +367,18 @@ export const demoSettings = {
   rewards: {
     referral_note: 'Refer a friend and get ৳50 wallet credit on their first delivered order.',
     warranty_days: 30,
+  },
+  homepage: {
+    sections: [
+      'hero', 'categories', 'best_selling', 'ott', 'ai', 'education',
+      'offers', 'why_choose', 'software', 'testimonials', 'faq',
+    ].map((id, index) => ({ id, enabled: true, sort_order: index + 1 })),
+    headings: {
+      best_selling: { eyebrow: 'Best Selling', title: 'What everyone is buying', subtitle: 'The most requested subscriptions this month — restocked daily.' },
+      ott: { eyebrow: 'Popular OTT Platforms', title: 'Streaming worth paying for', subtitle: 'Private profiles on genuine Premium plans, delivered in minutes.' },
+      ai: { eyebrow: 'Trending AI Tools', title: 'Work smarter with premium AI', subtitle: 'ChatGPT Plus, Claude Pro and friends — activated on private accounts.' },
+      education: { eyebrow: 'Educational Subscriptions', title: 'Invest in skills that pay', subtitle: 'Certificates from Coursera, Udemy, LinkedIn Learning and more.' },
+      software: { eyebrow: 'Software & Productivity', title: 'Tools that get work done', subtitle: 'Microsoft 365, Canva Pro, Adobe and the rest of your toolkit.' },
+    },
   },
 }

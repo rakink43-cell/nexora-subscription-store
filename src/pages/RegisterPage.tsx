@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext'
 import { Button, ErrorNote, Field, Input } from '../components/ui'
 import { Logo } from '../components/brand/Logo'
 import { cn, isBDPhone, isEmail, passwordStrength } from '../lib/utils'
+import { trackEvent } from '../lib/api'
 
 const RULES = [
   { test: (v: string) => v.length >= 8, label: 'At least 8 characters' },
@@ -47,6 +48,7 @@ export default function RegisterPage() {
         fullName: form.fullName,
         phone: form.phone || undefined,
       })
+      void trackEvent('sign_up', { method: 'email' })
       if (result.needsConfirmation) {
         setNeedsConfirmation(true)
       } else {

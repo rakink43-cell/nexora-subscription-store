@@ -366,7 +366,8 @@ export const demoCatalogue = {
   },
 
   async promotions(): Promise<Promotion[]> {
-    return state.promotions.filter((p) => p.is_active).sort((a, b) => a.sort_order - b.sort_order)
+    const now = Date.now()
+    return state.promotions.filter((p) => p.is_active && (!p.starts_at || new Date(p.starts_at).getTime() <= now) && (!p.ends_at || new Date(p.ends_at).getTime() > now)).sort((a, b) => a.sort_order - b.sort_order)
   },
 
   async reviews(): Promise<Review[]> {
@@ -662,6 +663,12 @@ export const demoSupport = {
 
 /* ------------------------------- admin ------------------------------- */
 export const demoAdmin = {
+  async analytics() {
+    await wait(120)
+    requireAdmin()
+    return { page_views: 0, visitors: 0, signups: state.users.length, daily: [], pages: [] }
+  },
+
   async stats(): Promise<DashboardStats> {
     await wait(200)
     requireAdmin()
@@ -1004,6 +1011,8 @@ export const demoAdmin = {
         subtitle: input.subtitle ?? null,
         description: input.description ?? null,
         image_url: input.image_url ?? null,
+        starts_at: input.starts_at ?? new Date().toISOString(),
+        ends_at: input.ends_at ?? null,
         badge: input.badge ?? null,
         cta_label: input.cta_label ?? 'Shop Now',
         cta_link: input.cta_link ?? '/products',

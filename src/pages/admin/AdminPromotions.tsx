@@ -184,6 +184,8 @@ function PromotionModal({
       await api.admin.savePromotion({
         ...form,
         title: form.title.trim(),
+        starts_at: form.starts_at ? new Date(form.starts_at).toISOString() : new Date().toISOString(),
+        ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
         sort_order: Number(form.sort_order ?? 0),
       })
       toast.success(value.isNew ? 'Promotion created' : 'Promotion updated')
@@ -214,6 +216,10 @@ function PromotionModal({
         <Field label="Subtitle">
           <Input value={form.subtitle ?? ''} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} />
         </Field>
+        <Field label="Promotion image URL">
+          <Input value={form.image_url ?? ''} onChange={(e) => setForm({ ...form, image_url: e.target.value || null })} placeholder="https://…" />
+        </Field>
+        {form.image_url && <img src={form.image_url} alt="Promotion preview" className="max-h-36 w-full rounded-lg border border-white/10 object-cover" />}
         <Field label="Description">
           <Textarea
             value={form.description ?? ''}
@@ -237,6 +243,14 @@ function PromotionModal({
           </Field>
           <Field label="Button link" hint="e.g. /product/netflix-premium-4k">
             <Input value={form.cta_link ?? ''} onChange={(e) => setForm({ ...form, cta_link: e.target.value })} />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Starts at">
+            <Input type="datetime-local" value={form.starts_at ? new Date(form.starts_at).toISOString().slice(0, 16) : ''} onChange={(e) => setForm({ ...form, starts_at: e.target.value ? new Date(e.target.value).toISOString() : undefined })} />
+          </Field>
+          <Field label="Ends at (optional)">
+            <Input type="datetime-local" value={form.ends_at ? new Date(form.ends_at).toISOString().slice(0, 16) : ''} onChange={(e) => setForm({ ...form, ends_at: e.target.value ? new Date(e.target.value).toISOString() : null })} />
           </Field>
         </div>
         <div className="flex items-center gap-4">

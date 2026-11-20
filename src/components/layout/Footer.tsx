@@ -44,9 +44,12 @@ export function Footer() {
   const contact = settings.contact
   const source = getDataSource()
 
-  const productLinks = categories.length
-    ? categories.map((c) => ({ label: c.name, to: `/category/${c.slug}` }))
-    : PRODUCT_LINKS
+  const productLinks = settings.footer?.product_links?.length
+    ? settings.footer.product_links
+    : categories.length ? categories.map((c) => ({ label: c.name, to: `/category/${c.slug}` })) : PRODUCT_LINKS
+  const companyLinks = settings.footer?.company_links?.length ? settings.footer.company_links : COMPANY_LINKS
+  const legalLinks = settings.footer?.legal_links?.length ? settings.footer.legal_links : LEGAL_LINKS
+  const socialLinks = settings.footer?.social_links ?? { facebook: contact.facebook, instagram: '', youtube: '', tiktok: '' }
 
   return (
     <footer className="relative mt-16 overflow-hidden border-t border-white/8 bg-[#050505]">
@@ -64,8 +67,7 @@ export function Footer() {
           <div>
             <Logo size="md" />
             <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-white/45">
-              {settings.site.tagline}. Genuine premium plans delivered fast, with payments verified by
-              real people across Bangladesh.
+              {settings.site.tagline}. {settings.footer?.description}
             </p>
 
             <div className="mt-5 space-y-2.5 text-[13px]">
@@ -110,9 +112,9 @@ export function Footer() {
               >
                 <Send className="h-4 w-4" />
               </a>
-              {contact.facebook ? (
+              {socialLinks.facebook ? (
                 <a
-                  href={contact.facebook}
+                  href={socialLinks.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook page"
@@ -125,18 +127,27 @@ export function Footer() {
                   <Share2 className="h-4 w-4" aria-hidden />
                 </span>
               )}
+              {[
+                ['Instagram', socialLinks.instagram],
+                ['YouTube', socialLinks.youtube],
+                ['TikTok', socialLinks.tiktok],
+              ].filter(([, url]) => Boolean(url)).map(([label, url]) => (
+                <a key={label} href={url as string} target="_blank" rel="noopener noreferrer" aria-label={`${label} page`} className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-white/60 transition hover:border-white/25 hover:text-white">
+                  <Globe className="h-4 w-4" />
+                </a>
+              ))}
             </div>
           </div>
 
           <FooterCol title="Products" links={productLinks.slice(0, 7)} />
-          <FooterCol title="Company" links={COMPANY_LINKS} />
+          <FooterCol title="Company" links={companyLinks} />
 
           <div>
             <h3 className="mb-3.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
               Legal
             </h3>
             <ul className="space-y-2.5">
-              {LEGAL_LINKS.map((l) => (
+              {legalLinks.map((l) => (
                 <li key={l.to}>
                   <Link
                     to={l.to}
@@ -172,8 +183,7 @@ export function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
           <p className="text-[11.5px] text-white/35">
-            © {new Date().getFullYear()} NEXORA · All rights reserved. NEXORA is an independent reseller;
-            all trademarks belong to their respective owners.
+            © {new Date().getFullYear()} {settings.site.name} · All rights reserved. {settings.footer?.copyright}
           </p>
           <div className="flex items-center gap-3">
             <span

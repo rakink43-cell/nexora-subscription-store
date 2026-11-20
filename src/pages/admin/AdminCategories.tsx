@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Edit2, Plus, Trash2 } from 'lucide-react'
+import { Edit2, ImagePlus, Plus, Trash2, Upload } from 'lucide-react'
 import { api } from '../../lib/api'
 import { AdminCard, AdminHeader, AdminTable } from '../../components/admin/AdminUI'
 import { Button, ErrorNote, Field, Input, Modal, Select, Skeleton, Textarea } from '../../components/ui'
@@ -176,6 +176,7 @@ function CategoryModal({
   const toast = useToast()
   const [form, setForm] = useState<Partial<Category>>(value ?? {})
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -195,6 +196,7 @@ function CategoryModal({
         name: form.name.trim(),
         slug: form.slug?.trim() || slugify(form.name),
         sort_order: Number(form.sort_order ?? 0),
+        image_url: form.image_url ?? null,
       })
       toast.success(value.isNew ? 'Category created' : 'Category updated', form.name)
       await onSaved()
@@ -234,6 +236,37 @@ function CategoryModal({
             onChange={(e) => setForm({ ...form, slug: slugify(e.target.value) })}
             placeholder="ott-subscriptions"
           />
+        </Field>
+        <Field label="Category image" hint="Upload a JPG, PNG or WEBP image (max 4 MB), or paste an image URL.">
+          <div className="flex items-center gap-3">
+            <div className="grid h-16 w-20 shrink-0 place-items-center overflow-hidden rounded-lg border border-white/10 bg-white/[0.03]">
+              {form.image_url ? <img src={form.image_url} alt="" className="h-full w-full object-cover" /> : <ImagePlus className="h-5 w-5 text-white/35" />}
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <Input value={form.image_url ?? ''} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} placeholder="https://…" />
+              <label className="nx-btn nx-btn-ghost inline-flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-[11.5px]">
+                <Upload className="h-3 w-3" aria-hidden />
+                {uploading ? 'Uploading…' : 'Upload image'}
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" disabled={uploading} onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  e.target.value = ''
+                  if (!file) return
+                  setUploading(true)
+                  try {
+                    const uploader = (api.admin as { uploadProductImage?: (f: File) => Promise<string> }).uploadProductImage
+                    if (!uploader) throw new Error('Image upload requires a connected Supabase project.')
+                    const url = await uploader(file)
+                    setForm((f) => ({ ...f, image_url: url }))
+                    toast.success('Category image uploaded')
+                  } catch (err) {
+                    toast.error('Upload failed', err instanceof Error ? err.message : undefined)
+                  } finally {
+                    setUploading(false)
+                  }
+                }} />
+              </label>
+            </div>
+          </div>
         </Field>
         <Field label="Description">
           <Textarea
