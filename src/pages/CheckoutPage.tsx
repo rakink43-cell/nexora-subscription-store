@@ -63,14 +63,14 @@ export default function CheckoutPage() {
   )
 
   useEffect(() => {
-    if (activeMethods.length && !activeMethods.some((m) => m.method === method)) {
+    if (activeMethods.length && !activeMethods.some((m) => m.method_key === method)) {
       setMethod(activeMethods[0].method)
     }
   }, [activeMethods, method])
 
   const discount = coupon?.discount ?? 0
   const total = Math.max(0, subtotal - discount)
-  const selectedMethod = activeMethods.find((m) => m.method === method)
+  const selectedMethod = activeMethods.find((m) => m.method_key === method)
 
   if (lines.length === 0) {
     return (
@@ -141,7 +141,7 @@ export default function CheckoutPage() {
         customer_email: form.email.trim(),
         customer_phone: form.phone.trim(),
         customer_note: form.note.trim() || '',
-        payment_method: method,
+        payment_method: selectedMethod?.method ?? 'bank_transfer',
         coupon_code: coupon?.code,
       })
 
@@ -262,13 +262,13 @@ export default function CheckoutPage() {
               <>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {activeMethods.map((m) => {
-                    const meta = PAYMENT_METHOD_META[m.method]
-                    const active = method === m.method
+                    const meta = PAYMENT_METHOD_META[m.method] ?? { accent: '#008CFF', note: m.payment_type === 'gateway' ? 'Online payment' : 'Manual payment' }
+                    const active = method === m.method_key
                     return (
                       <button
                         key={m.id}
                         type="button"
-                        onClick={() => setMethod(m.method)}
+                        onClick={() => setMethod(m.method_key)}
                         aria-pressed={active}
                         className={cn(
                           'relative overflow-hidden rounded-xl border p-3 text-left transition',
@@ -302,7 +302,7 @@ export default function CheckoutPage() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
-                          {selectedMethod.bank_name ? 'Bank account' : 'Send money to'}
+                          {selectedMethod.bank_name ? 'Bank account' : selectedMethod.payment_type === 'gateway' ? 'Online payment' : 'Send money to'}
                         </p>
                         <div className="mt-1 flex items-center gap-2">
                           <p className="font-display text-lg font-bold tracking-wide text-white">
@@ -484,15 +484,7 @@ export default function CheckoutPage() {
             </p>
 
             <div className="mt-3 flex items-center justify-center gap-3 border-t border-white/8 pt-3 text-[10.5px] text-white/30">
-              <span className="flex items-center gap-1">
-                <Wallet className="h-3 w-3" aria-hidden /> bKash
-              </span>
-              <span className="flex items-center gap-1">
-                <Wallet className="h-3 w-3" aria-hidden /> Nagad
-              </span>
-              <span className="flex items-center gap-1">
-                <Wallet className="h-3 w-3" aria-hidden /> Bank
-              </span>
+              {activeMethods.map((m) => <span key={m.id} className="flex items-center gap-1"><Wallet className="h-3 w-3" aria-hidden /> {m.display_name}</span>)}
             </div>
           </div>
 
