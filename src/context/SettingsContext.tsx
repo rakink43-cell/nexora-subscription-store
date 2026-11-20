@@ -78,11 +78,27 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     void reload()
   }, [reload])
 
-  // keep the document title/description in sync with admin-managed SEO settings
+  // Keep search and social-share metadata in sync with admin-managed SEO settings.
   useEffect(() => {
+    const setMeta = (selector: string, attribute: 'name' | 'property', key: string, content?: string) => {
+      if (!content) return
+      let element = document.head.querySelector<HTMLMetaElement>(selector)
+      if (!element) {
+        element = document.createElement('meta')
+        element.setAttribute(attribute, key)
+        document.head.appendChild(element)
+      }
+      element.content = content
+    }
     if (settings.seo?.title) document.title = settings.seo.title
-    const meta = document.querySelector('meta[name="description"]')
-    if (meta && settings.seo?.description) meta.setAttribute('content', settings.seo.description)
+    setMeta('meta[name="description"]', 'name', 'description', settings.seo?.description)
+    setMeta('meta[property="og:title"]', 'property', 'og:title', settings.seo?.og_title || settings.seo?.title)
+    setMeta('meta[property="og:description"]', 'property', 'og:description', settings.seo?.og_description || settings.seo?.description)
+    setMeta('meta[property="og:image"]', 'property', 'og:image', settings.seo?.og_image)
+    setMeta('meta[name="twitter:card"]', 'name', 'twitter:card', 'summary_large_image')
+    setMeta('meta[name="twitter:title"]', 'name', 'twitter:title', settings.seo?.og_title || settings.seo?.title)
+    setMeta('meta[name="twitter:description"]', 'name', 'twitter:description', settings.seo?.og_description || settings.seo?.description)
+    setMeta('meta[name="twitter:image"]', 'name', 'twitter:image', settings.seo?.og_image)
   }, [settings.seo])
 
   const value = useMemo<StoreState>(
