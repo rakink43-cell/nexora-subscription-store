@@ -7,13 +7,17 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SITE_URL = "https://nexora-subscription-store.pages.dev";
 
 const allowedOrigins = new Set([SITE_URL, "http://localhost:5173"]);
+function isAllowedOrigin(origin: string | null) {
+  return !origin || allowedOrigins.has(origin) || /^https:\/\/[a-f0-9]+\\.nexora-subscription-store\\.pages\\.dev$/i.test(origin);
+}
 const encoder = new TextEncoder();
 
 function headers(origin: string | null) {
   const allowed = origin && allowedOrigins.has(origin) ? origin : SITE_URL;
   return {
     "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-api-version",
+    "Access-Control-Max-Age": "86400",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin",
   };
@@ -64,7 +68,7 @@ Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin");
   if (req.method === "OPTIONS") return new Response("ok", { headers: headers(origin) });
   if (req.method !== "POST") return json({ error: "Method not allowed." }, 405, origin);
-  if (origin && !allowedOrigins.has(origin)) return json({ error: "Origin not allowed." }, 403, origin);
+  if (!isAllowedOrigin(origin)) return json({ error: "Origin not allowed." }, 403, origin);
 
   try {
     const body = await req.json();
