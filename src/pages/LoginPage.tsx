@@ -260,7 +260,7 @@ export default function LoginPage() {
           )}
         </div>
 
-        {!resetMode && (
+        {!resetMode && !recoveryMode && (
           <p className="mt-4 text-center text-[12.5px] text-white/45">
             New to NEXORA?{' '}
             <Link to="/register" className="font-semibold text-[#6EC1FF] hover:underline">
