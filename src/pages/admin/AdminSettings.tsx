@@ -171,7 +171,9 @@ export default function AdminSettings() {
                     if (!file) return
                     setBannerUploading(true)
                     try {
-                      const url = await api.admin.uploadProductImage(file)
+                      const uploader = (api.admin as { uploadProductImage?: (file: File) => Promise<string> }).uploadProductImage
+                      if (!uploader) throw new Error('Image upload requires a connected Supabase project.')
+                      const url = await uploader(file)
                       patch('site', { hero_banner: url })
                       toast.success('Banner uploaded', 'Save changes to publish it on the homepage.')
                     } catch (err) {
