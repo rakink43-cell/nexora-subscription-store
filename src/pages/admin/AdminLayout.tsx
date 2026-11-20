@@ -30,7 +30,7 @@ import type { Notification } from '../../types'
 const NAV: { section: string; items: { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean }[] }[] = [
   {
     section: 'Overview',
-    items: [{ to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true }],
+    items: [{ to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true }, { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 }],
   },
   {
     section: 'Commerce',
