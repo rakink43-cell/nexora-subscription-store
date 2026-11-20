@@ -49,7 +49,7 @@ export function Hero() {
               {site.hero_cta || 'Explore Subscriptions'}
             </ButtonLink>
             <ButtonLink
-              to="/offers"
+              to={site.hero_secondary_link || '/offers'}
               variant="ghost"
               size="lg"
               className="w-full sm:w-auto"
