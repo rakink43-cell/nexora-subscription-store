@@ -77,7 +77,11 @@ export function CategoryGrid() {
                           : 'border-[#008CFF]/25 bg-[#008CFF]/10 text-[#6EC1FF] group-hover:border-[#008CFF]/60',
                       )}
                     >
-                      <Icon className="h-5 w-5" />
+                      {cat.image_url ? (
+                        <img src={cat.image_url} alt="" loading="lazy" className="h-full w-full rounded-xl object-cover" />
+                      ) : (
+                        <Icon className="h-5 w-5" />
+                      )}
                     </span>
                     <div className="min-w-0 flex-1">
                       <h3 className="flex items-center gap-1 text-[14.5px] font-semibold text-white">
