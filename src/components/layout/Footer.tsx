@@ -64,8 +64,7 @@ export function Footer() {
           <div>
             <Logo size="md" />
             <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-white/45">
-              {settings.site.tagline}. Genuine premium plans delivered fast, with payments verified by
-              real people across Bangladesh.
+              {settings.site.tagline}. {settings.footer?.description}
             </p>
 
             <div className="mt-5 space-y-2.5 text-[13px]">
@@ -172,8 +171,7 @@ export function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-3 text-center sm:flex-row sm:text-left">
           <p className="text-[11.5px] text-white/35">
-            © {new Date().getFullYear()} NEXORA · All rights reserved. NEXORA is an independent reseller;
-            all trademarks belong to their respective owners.
+            © {new Date().getFullYear()} {settings.site.name} · All rights reserved. {settings.footer?.copyright}
           </p>
           <div className="flex items-center gap-3">
             <span
