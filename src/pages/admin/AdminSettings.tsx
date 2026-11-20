@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Building2, Globe, Megaphone, Plus, Save, Trash2, Wallet } from 'lucide-react'
+import { Building2, Globe, Megaphone, Plus, Save, Trash2, Upload, Wallet } from 'lucide-react'
 import { api, isDemoMode } from '../../lib/api'
 import { AdminCard, AdminHeader } from '../../components/admin/AdminUI'
 import { Button, ErrorNote, Field, Input, Tabs, Tab, Textarea } from '../../components/ui'
@@ -14,6 +14,7 @@ export default function AdminSettings() {
   const [form, setForm] = useState<SiteSettings>(settings)
   const [methods, setMethods] = useState<PaymentMethodConfig[]>(paymentMethods)
   const [saving, setSaving] = useState(false)
+  const [bannerUploading, setBannerUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [newMethod, setNewMethod] = useState({ method_key: '', display_name: '', account_number: '', account_name: '', account_type: 'Personal', instructions: '', payment_type: 'manual' as 'manual' | 'gateway', requires_transaction_id: true })
 
@@ -152,9 +153,37 @@ export default function AdminSettings() {
             <Field label="Primary button label">
               <Input value={form.site.hero_cta} onChange={(e) => patch('site', { hero_cta: e.target.value })} />
             </Field>
-            <Field label="Banner image path or URL" hint="Leave as /brand/nexora-banner.png to use the official banner">
+            <Field label="Banner image path or URL" hint="Upload a JPG, PNG or WEBP image (max 4 MB), or paste an image URL.">
               <Input value={form.site.hero_banner} onChange={(e) => patch('site', { hero_banner: e.target.value })} />
             </Field>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="nx-btn nx-btn-ghost inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-[11.5px]">
+                <Upload className="h-3.5 w-3.5" aria-hidden />
+                {bannerUploading ? 'Uploading banner…' : 'Upload banner image'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  disabled={bannerUploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    e.target.value = ''
+                    if (!file) return
+                    setBannerUploading(true)
+                    try {
+                      const url = await api.admin.uploadProductImage(file)
+                      patch('site', { hero_banner: url })
+                      toast.success('Banner uploaded', 'Save changes to publish it on the homepage.')
+                    } catch (err) {
+                      toast.error('Banner upload failed', err instanceof Error ? err.message : undefined)
+                    } finally {
+                      setBannerUploading(false)
+                    }
+                  }}
+                />
+              </label>
+              <span className="text-[10.5px] text-white/40">Recommended: wide landscape image</span>
+            </div>
             {form.site.hero_banner && (
               <div className="overflow-hidden rounded-lg border border-white/10">
                 <img src={form.site.hero_banner} alt="Banner preview" className="w-full object-cover" />
