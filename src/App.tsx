@@ -33,6 +33,7 @@ import NotFoundPage from './pages/NotFoundPage'
 /* Admin bundle is code-split so storefront visitors never download it. */
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts'))
 const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'))
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders'))
@@ -112,6 +113,10 @@ export default function App() {
                           <AdminDashboard />
                         </Suspense>
                       }
+                    />
+                    <Route
+                      path="analytics"
+                      element={<Suspense fallback={<PageFallback />}><AdminAnalytics /></Suspense>}
                     />
                     <Route
                       path="products"
