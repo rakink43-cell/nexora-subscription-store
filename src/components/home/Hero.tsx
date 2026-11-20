@@ -8,11 +8,11 @@ import { cn } from '../../lib/utils'
 export function Hero() {
   const { settings } = useStore()
   const site = settings.site
-  const slides = (site.hero_slides ?? []).filter(Boolean)
+  const slides = [site.hero_banner, ...(site.hero_slides ?? [])].filter((url): url is string => Boolean(url))
   const [slideIndex, setSlideIndex] = useState(0)
-  const activeImage = slides.length ? slides[slideIndex % slides.length] : (site.hero_banner || '/brand/nexora-banner.png')
+  const activeImage = slides.length ? slides[slideIndex % slides.length] : '/brand/nexora-banner.png'
 
-  useEffect(() => { setSlideIndex(0) }, [site.hero_slides])
+  useEffect(() => { setSlideIndex(0) }, [slides.join('|')])
   useEffect(() => {
     if (slides.length < 2) return
     const timer = window.setInterval(() => setSlideIndex((index) => (index + 1) % slides.length), 5000)
