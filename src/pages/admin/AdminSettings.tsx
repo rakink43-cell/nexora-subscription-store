@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Building2, Globe, Megaphone, Plus, Save, Trash2, Upload, Wallet } from 'lucide-react'
+import { Building2, Globe, Megaphone, Plus, Save, Trash2, Upload, Wallet, ShieldCheck } from 'lucide-react'
 import { api, isDemoMode } from '../../lib/api'
 import { AdminCard, AdminHeader } from '../../components/admin/AdminUI'
 import { Button, ErrorNote, Field, Input, Tabs, Tab, Textarea } from '../../components/ui'
 import { useToast } from '../../context/ToastContext'
 import { useStore } from '../../context/SettingsContext'
 import type { PaymentMethodConfig, SiteSettings } from '../../types'
+import { supabase } from '../../lib/supabase'
 
 export default function AdminSettings() {
   const { settings, paymentMethods, reload } = useStore()
@@ -94,7 +95,12 @@ export default function AdminSettings() {
         <Tab value="notices">Notices</Tab>
         <Tab value="seo">SEO</Tab>
         <Tab value="footer">Footer</Tab>
+        <Tab value="security">Security</Tab>
       </Tabs>
+
+      {tab === 'security' && <AdminCard title="Administrator security" description="Change the password for your current administrator session. Use a unique password with at least 12 characters.">
+        <AdminPasswordForm />
+      </AdminCard>}
 
       {tab === 'site' && (
         <AdminCard title="Store identity" description="Brand name and tagline used across the site">
@@ -470,4 +476,44 @@ export default function AdminSettings() {
       </div>
     </div>
   )
+}
+
+
+function AdminPasswordForm() {
+  const toast = useToast()
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const changePassword = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setError(null)
+    if (!supabase) return setError('Supabase authentication is not configured.')
+    if (password.length < 12) return setError('Use at least 12 characters.')
+    if (password !== confirm) return setError('The passwords do not match.')
+    setBusy(true)
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({ password })
+      if (updateError) throw updateError
+      setPassword('')
+      setConfirm('')
+      toast.success('Password updated', 'Your administrator password has been changed.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update your password.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return <form onSubmit={changePassword} className="max-w-lg space-y-3">
+    <Field label="New password" required hint="At least 12 characters.">
+      <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" minLength={12} required />
+    </Field>
+    <Field label="Confirm new password" required>
+      <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" minLength={12} required />
+    </Field>
+    {error && <ErrorNote message={error} />}
+    <Button type="submit" loading={busy} icon={<ShieldCheck className="h-4 w-4" />}>Update admin password</Button>
+  </form>
 }
