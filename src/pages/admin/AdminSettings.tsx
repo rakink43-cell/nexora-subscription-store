@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Building2, Globe, Megaphone, Save, Wallet } from 'lucide-react'
+import { Building2, Globe, Megaphone, Plus, Save, Trash2, Wallet } from 'lucide-react'
 import { api, isDemoMode } from '../../lib/api'
 import { AdminCard, AdminHeader } from '../../components/admin/AdminUI'
 import { Button, ErrorNote, Field, Input, Tabs, Tab, Textarea } from '../../components/ui'
@@ -15,6 +15,7 @@ export default function AdminSettings() {
   const [methods, setMethods] = useState<PaymentMethodConfig[]>(paymentMethods)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [newMethod, setNewMethod] = useState({ method_key: '', display_name: '', account_number: '', account_name: '', account_type: 'Personal', instructions: '', payment_type: 'manual' as 'manual' | 'gateway', requires_transaction_id: true })
 
   useEffect(() => {
     setForm(settings)
@@ -189,118 +190,133 @@ export default function AdminSettings() {
       )}
 
       {tab === 'payment' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-white">Payment methods</h2>
+              <p className="mt-1 text-[11.5px] text-white/45">Add, edit, disable or remove any payment option. Active methods appear at checkout.</p>
+            </div>
+            <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-[10px] text-emerald-300">{methods.filter((m) => m.is_active).length} active</span>
+          </div>
+
           {methods.map((m) => (
             <AdminCard
               key={m.id}
-              title={`${m.display_name} instructions`}
-              description={`Order instructions shown to customers paying with ${m.display_name}`}
+              title={m.display_name}
+              description={`Key: ${m.method_key} · ${m.payment_type === 'gateway' ? 'Gateway' : 'Manual payment'}`}
               action={
-                <Button size="sm" variant="ghost" onClick={() => void saveMethod(m)} loading={saving}>
-                  Save
-                </Button>
+                <div className="flex items-center gap-1.5">
+                  <Button size="sm" variant="ghost" onClick={() => {
+                    if (window.confirm(`Delete ${m.display_name}? This will remove it from checkout but keep past orders.`)) {
+                      setSaving(true)
+                      api.admin.deletePaymentMethod(m.id).then(async () => {
+                        toast.success('Payment method deleted', m.display_name)
+                        await reload()
+                      }).catch((err) => setError(err instanceof Error ? err.message : 'Could not delete method.')).finally(() => setSaving(false))
+                    }
+                  }} loading={saving} icon={<Trash2 className="h-3.5 w-3.5" />}>Delete</Button>
+                  <Button size="sm" onClick={() => void saveMethod(m)} loading={saving} icon={<Save className="h-3.5 w-3.5" />}>Save</Button>
+                </div>
               }
             >
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Display name">
-                  <Input
-                    value={m.display_name}
-                    onChange={(e) =>
-                      setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, display_name: e.target.value } : x)))
-                    }
-                  />
+                <Field label="Display name" required>
+                  <Input value={m.display_name} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, display_name: e.target.value } : x))} />
+                </Field>
+                <Field label="Unique method key" hint="Lowercase letters, numbers, hyphen or underscore">
+                  <Input value={m.method_key} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, method_key: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '-') } : x))} />
+                </Field>
+                <Field label="Account / payment number">
+                  <Input value={m.account_number ?? ''} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, account_number: e.target.value } : x))} />
                 </Field>
                 <Field label="Account name">
-                  <Input
-                    value={m.account_name ?? ''}
-                    onChange={(e) =>
-                      setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, account_name: e.target.value } : x)))
-                    }
-                  />
-                </Field>
-                <Field label="Account / merchant number" required>
-                  <Input
-                    value={m.account_number}
-                    className="font-mono"
-                    onChange={(e) =>
-                      setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, account_number: e.target.value } : x)))
-                    }
-                  />
+                  <Input value={m.account_name ?? ''} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, account_name: e.target.value } : x))} />
                 </Field>
                 <Field label="Account type">
-                  <Input
-                    value={m.account_type ?? ''}
-                    onChange={(e) =>
-                      setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, account_type: e.target.value } : x)))
-                    }
-                  />
+                  <Input value={m.account_type ?? ''} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, account_type: e.target.value } : x))} />
                 </Field>
-                {m.method === 'bank_transfer' && (
-                  <>
-                    <Field label="Bank name">
-                      <Input
-                        value={m.bank_name ?? ''}
-                        onChange={(e) =>
-                          setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, bank_name: e.target.value } : x)))
-                        }
-                      />
-                    </Field>
-                    <Field label="Branch">
-                      <Input
-                        value={m.branch ?? ''}
-                        onChange={(e) =>
-                          setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, branch: e.target.value } : x)))
-                        }
-                      />
-                    </Field>
-                    <Field label="Routing number">
-                      <Input
-                        value={m.routing_number ?? ''}
-                        onChange={(e) =>
-                          setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, routing_number: e.target.value } : x)))
-                        }
-                      />
-                    </Field>
-                  </>
-                )}
+                <Field label="Bank name (optional)">
+                  <Input value={m.bank_name ?? ''} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, bank_name: e.target.value } : x))} />
+                </Field>
+                <Field label="Branch (optional)">
+                  <Input value={m.branch ?? ''} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, branch: e.target.value } : x))} />
+                </Field>
+                <Field label="Routing number (optional)">
+                  <Input value={m.routing_number ?? ''} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, routing_number: e.target.value } : x))} />
+                </Field>
+                <Field label="QR image URL (optional)">
+                  <Input value={m.qr_image_url ?? ''} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, qr_image_url: e.target.value } : x))} />
+                </Field>
+                <Field label="Payment flow">
+                  <select className="nx-input" value={m.payment_type ?? 'manual'} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, payment_type: e.target.value as 'manual' | 'gateway' } : x))}>
+                    <option value="manual">Manual payment</option>
+                    <option value="gateway">Online gateway</option>
+                  </select>
+                </Field>
               </div>
               <div className="mt-3">
-                <Field label="Customer instructions">
-                  <Textarea
-                    className="min-h-[90px]"
-                    value={m.instructions ?? ''}
-                    onChange={(e) =>
-                      setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, instructions: e.target.value } : x)))
-                    }
-                  />
+                <Field label="Customer instructions" hint="Write the exact steps customers should follow">
+                  <Textarea className="min-h-[90px]" value={m.instructions ?? ''} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, instructions: e.target.value } : x))} />
                 </Field>
               </div>
-              <label className="mt-3 flex cursor-pointer items-center gap-2 text-[12.5px] text-white/70">
-                <input
-                  type="checkbox"
-                  checked={m.is_active}
-                  onChange={(e) =>
-                    setMethods((prev) => prev.map((x) => (x.id === m.id ? { ...x, is_active: e.target.checked } : x)))
-                  }
-                  className="h-4 w-4 accent-[#008CFF]"
-                />
-                Accept payments with this method
-              </label>
+              <div className="mt-3">
+                <Field label="Additional details (one per line: Label | Value)" hint="For example: Merchant Name | NEXORA">
+                  <Textarea className="min-h-[70px]" value={Object.entries(m.extra_details ?? {}).map(([k,v]) => `${k} | ${v}`).join('\n')} onChange={(e) => {
+                    const extra_details = Object.fromEntries(e.target.value.split('\n').filter(Boolean).map((line) => { const [k, ...v] = line.split('|'); return [k.trim(), v.join('|').trim()] }).filter(([k]) => k))
+                    setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, extra_details } : x))
+                  }} />
+                </Field>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-5">
+                <label className="flex items-center gap-2 text-[12px] text-white/70"><input type="checkbox" checked={m.is_active} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, is_active: e.target.checked } : x))} className="h-4 w-4 accent-[#008CFF]" />Show at checkout</label>
+                <label className="flex items-center gap-2 text-[12px] text-white/70"><input type="checkbox" checked={m.requires_transaction_id ?? true} onChange={(e) => setMethods((prev) => prev.map((x) => x.id === m.id ? { ...x, requires_transaction_id: e.target.checked } : x))} className="h-4 w-4 accent-[#008CFF]" />Require Transaction ID</label>
+              </div>
             </AdminCard>
           ))}
 
+          <AdminCard title="Add a new payment method" description="Create any custom method. It will appear on the public checkout when enabled.">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Display name" required><Input value={newMethod.display_name} placeholder="e.g. Rocket / Upay / Bank" onChange={(e) => setNewMethod((v) => ({ ...v, display_name: e.target.value }))} /></Field>
+              <Field label="Unique key" required hint="Example: rocket, upay, bank-usd"><Input value={newMethod.method_key} placeholder="rocket" onChange={(e) => setNewMethod((v) => ({ ...v, method_key: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '-') }))} /></Field>
+              <Field label="Account / payment number"><Input value={newMethod.account_number} onChange={(e) => setNewMethod((v) => ({ ...v, account_number: e.target.value }))} /></Field>
+              <Field label="Account name"><Input value={newMethod.account_name} onChange={(e) => setNewMethod((v) => ({ ...v, account_name: e.target.value }))} /></Field>
+              <Field label="Account type"><Input value={newMethod.account_type} onChange={(e) => setNewMethod((v) => ({ ...v, account_type: e.target.value }))} /></Field>
+              <Field label="Payment flow"><select className="nx-input" value={newMethod.payment_type} onChange={(e) => setNewMethod((v) => ({ ...v, payment_type: e.target.value as 'manual' | 'gateway' }))}><option value="manual">Manual payment</option><option value="gateway">Online gateway</option></select></Field>
+            </div>
+            <div className="mt-3"><Field label="Customer instructions"><Textarea className="min-h-[80px]" value={newMethod.instructions} onChange={(e) => setNewMethod((v) => ({ ...v, instructions: e.target.value }))} /></Field></div>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-[12px] text-white/70"><input type="checkbox" checked={newMethod.requires_transaction_id} onChange={(e) => setNewMethod((v) => ({ ...v, requires_transaction_id: e.target.checked }))} className="h-4 w-4 accent-[#008CFF]" />Require Transaction ID</label>
+              <Button loading={saving} icon={<Plus className="h-4 w-4" />} onClick={() => {
+                const method_key = newMethod.method_key.trim()
+                if (!newMethod.display_name.trim() || !/^[a-z0-9][a-z0-9_-]{1,63}$/.test(method_key)) {
+                  setError('Enter a display name and a unique key (at least 2 characters).')
+                  return
+                }
+                setSaving(true)
+                setError(null)
+                api.admin.createPaymentMethod({
+                  method: 'bank_transfer',
+                  method_key,
+                  display_name: newMethod.display_name.trim(),
+                  account_number: newMethod.account_number.trim(),
+                  account_name: newMethod.account_name.trim() || null,
+                  account_type: newMethod.account_type.trim() || null,
+                  bank_name: null, branch: null, routing_number: null, instructions: newMethod.instructions.trim() || null,
+                  logo_url: null, qr_image_url: null, payment_type: newMethod.payment_type,
+                  extra_details: {}, requires_transaction_id: newMethod.requires_transaction_id,
+                  is_active: true, sort_order: methods.length + 1,
+                }).then(async () => {
+                  toast.success('Payment method added', newMethod.display_name)
+                  setNewMethod({ method_key: '', display_name: '', account_number: '', account_name: '', account_type: 'Personal', instructions: '', payment_type: 'manual', requires_transaction_id: true })
+                  await reload()
+                }).catch((err) => setError(err instanceof Error ? err.message : 'Could not add payment method.')).finally(() => setSaving(false))
+              }}>Add payment method</Button>
+            </div>
+          </AdminCard>
+
           <div className="rounded-xl border border-[#008CFF]/25 bg-[#008CFF]/[0.06] p-4">
-            <p className="flex items-center gap-2 text-[12.5px] font-semibold text-white">
-              <Wallet className="h-4 w-4 text-[#6EC1FF]" aria-hidden />
-              Manual verification model
-            </p>
-            <p className="mt-1.5 text-[11.5px] leading-relaxed text-white/50">
-              NEXORA never marks an order as paid automatically. Customers send money, submit a
-              transaction ID, and an administrator verifies it. To add an official payment gateway later,
-              create a server-side endpoint and write the same{' '}
-              <code className="rounded bg-black/40 px-1 font-mono text-[10.5px]">payments</code> row — the
-              order workflow does not need to change.
-            </p>
+            <p className="flex items-center gap-2 text-[12.5px] font-semibold text-white"><Wallet className="h-4 w-4 text-[#6EC1FF]" aria-hidden />Manual verification model</p>
+            <p className="mt-1.5 text-[11.5px] leading-relaxed text-white/50">Customers send money and submit a Transaction ID. Admin verifies it before delivery. Gateway methods need a separate approved merchant account and secure server-side integration before they can collect payments automatically.</p>
           </div>
         </div>
       )}
