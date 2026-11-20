@@ -58,13 +58,13 @@ export default function CheckoutPage() {
   }, [user])
 
   const activeMethods = useMemo(
-    () => (paymentMethods.length ? paymentMethods : []),
+    () => paymentMethods.filter((m) => m.payment_type !== 'gateway'),
     [paymentMethods],
   )
 
   useEffect(() => {
     if (activeMethods.length && !activeMethods.some((m) => m.method_key === method)) {
-      setMethod(activeMethods[0].method)
+      setMethod(activeMethods[0].method_key)
     }
   }, [activeMethods, method])
 
@@ -339,6 +339,18 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
+                    {selectedMethod.qr_image_url && (
+                      <div className="mt-3 border-t border-[#008CFF]/15 pt-3">
+                        <img src={selectedMethod.qr_image_url} alt={`${selectedMethod.display_name} payment QR code`} className="max-h-44 rounded-lg bg-white p-2 object-contain" />
+                      </div>
+                    )}
+                    {Object.entries(selectedMethod.extra_details ?? {}).length > 0 && (
+                      <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-[#008CFF]/15 pt-3">
+                        {Object.entries(selectedMethod.extra_details).map(([label, value]) => (
+                          <div key={label}><dt className="text-[10px] text-white/35">{label}</dt><dd className="text-[11.5px] text-white/75">{value}</dd></div>
+                        ))}
+                      </dl>
+                    )}
                     {selectedMethod.instructions && (
                       <p className="mt-3 whitespace-pre-line border-t border-[#008CFF]/15 pt-3 text-[12px] leading-relaxed text-white/55">
                         {selectedMethod.instructions}
