@@ -601,6 +601,7 @@ export const admin = {
       slug: input.slug,
       description: input.description,
       icon: input.icon,
+      image_url: input.image_url ?? null,
       accent: input.accent,
       sort_order: input.sort_order,
       is_active: input.is_active,
