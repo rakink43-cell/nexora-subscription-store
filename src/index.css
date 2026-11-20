@@ -445,3 +445,18 @@
 .nx-section:nth-of-type(even) { background-image:radial-gradient(ellipse at 8% 50%,rgba(0,140,255,.055),transparent 45%),radial-gradient(ellipse at 92% 30%,rgba(130,45,220,.05),transparent 40%); }
 @media(max-width:640px) { .nx-offer-ticker-label { padding-inline:11px; font-size:9px; } .nx-offer-ticker-item { padding-inline:14px; gap:7px; font-size:10px; } }
 @media(prefers-reduced-motion:reduce) { .nx-offer-ticker-track,.nx-game-mascot,.nx-live-dot { animation:none!important; } }
+
+@keyframes nx-feature-in { from { opacity:0; transform:translateY(14px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes nx-orbit { from { transform:rotate(0deg) scale(1); } to { transform:rotate(360deg) scale(1); } }
+@keyframes nx-character-bob { 0%,100% { transform:translateY(0) rotate(-4deg); } 50% { transform:translateY(-13px) rotate(4deg); } }
+.nx-feature-copy { animation:nx-feature-in .55s cubic-bezier(.2,.8,.2,1) both; }
+.nx-feature-orbit { animation:nx-orbit 18s linear infinite; }
+.nx-feature-orbit-reverse { animation:nx-orbit 12s linear infinite reverse; border-style:dotted; }
+.nx-feature-character { animation:nx-character-bob 3.8s ease-in-out infinite; box-shadow:0 22px 70px -25px rgba(0,0,0,.8),0 0 50px rgba(100,190,255,.22),inset 0 1px rgba(255,255,255,.25); }
+.nx-feature-stage { box-shadow:0 30px 90px -48px rgba(0,140,255,.5),inset 0 1px rgba(255,255,255,.08); }
+header.sticky nav a, header.sticky nav button { transition:color .2s ease,background .2s ease,transform .2s ease; }
+header.sticky nav a:hover, header.sticky nav button:hover { text-shadow:0 0 18px rgba(90,190,255,.45); }
+.nx-card img { transition:transform .55s cubic-bezier(.2,.8,.2,1),filter .35s ease; }
+.nx-card-hover:hover img { filter:saturate(1.13) contrast(1.03); }
+.nx-card-hover:focus-within { outline:1px solid rgba(105,200,255,.65); outline-offset:2px; }
+@media(prefers-reduced-motion:reduce) { .nx-feature-copy,.nx-feature-orbit,.nx-feature-character { animation:none!important; } }
