@@ -554,6 +554,7 @@ export const admin = {
       short_description: input.short_description,
       description: input.description,
       image_url: input.image_url,
+      gallery: input.gallery ?? [],
       duration: input.duration,
       original_price: input.original_price,
       discounted_price: input.discounted_price,
