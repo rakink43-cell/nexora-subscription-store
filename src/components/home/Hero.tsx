@@ -37,29 +37,16 @@ export function Hero() {
           </div>
 
           <h1 className="font-display text-[clamp(1.9rem,5.4vw,3.9rem)] font-extrabold leading-[1.06] tracking-tight text-white">
-            Unlock a World of{' '}
-            <span className="relative whitespace-nowrap">
-              <span className="nx-gradient-text">Premium Entertainment</span>
-              <svg
-                className="absolute -bottom-1.5 left-0 h-2 w-full text-[#F00016]/70"
-                viewBox="0 0 200 8"
-                preserveAspectRatio="none"
-                aria-hidden
-              >
-                <path d="M0 6 Q 50 0 100 5 T 200 3" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-              </svg>
-            </span>{' '}
-            &amp; More!
+            <span className="nx-gradient-text">{site.hero_headline || 'Unlock a World of Premium Entertainment & More!'}</span>
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-white/55 sm:text-base">
-            Premium Subscriptions — All in One Place. OTT, AI tools, education, software and gaming
-            delivered fast, verified by real people, backed by a 30-day replacement warranty.
+            {site.hero_subtitle || 'Premium Subscriptions — All in One Place. OTT, AI tools, education, software and gaming delivered fast.'}
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <ButtonLink to="/products" size="lg" className="w-full sm:w-auto" icon={<Zap className="h-4 w-4" />}>
-              Explore Subscriptions
+              {site.hero_cta || 'Explore Subscriptions'}
             </ButtonLink>
             <ButtonLink
               to="/offers"
