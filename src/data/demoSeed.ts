@@ -173,6 +173,10 @@ export const demoPaymentMethods: PaymentMethodConfig[] = [
   {
     id: 'pm-1',
     method: 'bkash',
+    method_key: 'bkash',
+    payment_type: 'manual',
+    extra_details: {},
+    requires_transaction_id: true,
     display_name: 'bKash',
     account_name: 'NEXORA Subscriptions',
     account_number: '01575864415',
@@ -188,6 +192,10 @@ export const demoPaymentMethods: PaymentMethodConfig[] = [
   {
     id: 'pm-2',
     method: 'nagad',
+    method_key: 'nagad',
+    payment_type: 'manual',
+    extra_details: {},
+    requires_transaction_id: true,
     display_name: 'Nagad',
     account_name: 'NEXORA Subscriptions',
     account_number: '01575864415',
@@ -203,6 +211,10 @@ export const demoPaymentMethods: PaymentMethodConfig[] = [
   {
     id: 'pm-3',
     method: 'bank_transfer',
+    method_key: 'bank_transfer',
+    payment_type: 'manual',
+    extra_details: {},
+    requires_transaction_id: true,
     display_name: 'Bank Transfer',
     account_name: 'NEXORA Subscriptions',
     account_number: '1234567890123',
