@@ -936,6 +936,18 @@ export const demoAdmin = {
     save()
   },
 
+  async createPaymentMethod(input: Omit<PaymentMethodConfig, 'id'>) {
+    requireAdmin()
+    state.paymentMethods.push({ ...input, id: uid('payment') })
+    save()
+  },
+
+  async deletePaymentMethod(id: string) {
+    requireAdmin()
+    state.paymentMethods = state.paymentMethods.filter((m) => m.id !== id)
+    save()
+  },
+
   async settings() {
     requireAdmin()
     return state.settings
