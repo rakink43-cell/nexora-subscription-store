@@ -663,6 +663,12 @@ export const demoSupport = {
 
 /* ------------------------------- admin ------------------------------- */
 export const demoAdmin = {
+  async analytics() {
+    await wait(120)
+    requireAdmin()
+    return { page_views: 0, visitors: 0, signups: state.users.length, daily: [], pages: [] }
+  },
+
   async stats(): Promise<DashboardStats> {
     await wait(200)
     requireAdmin()
