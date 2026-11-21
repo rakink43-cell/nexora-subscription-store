@@ -41,6 +41,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     try {
       const [profile, resolvedRole] = await Promise.all([api.auth.getUser(), api.auth.getRole()])
+      if (profile?.is_blocked) {
+        await api.auth.signOut()
+        setUser(null)
+        setRole(null)
+        return
+      }
       setUser(profile)
       setRole(profile ? (resolvedRole ?? 'customer') : null)
     } catch {
@@ -68,6 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     const profile = await api.auth.signIn(email, password)
+    if (profile.is_blocked) {
+      await api.auth.signOut()
+      throw new Error('This account is blocked. Please contact NEXORA support.')
+    }
     const resolvedRole = (await api.auth.getRole()) ?? 'customer'
     setUser(profile)
     setRole(resolvedRole as Role)
@@ -88,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (sessionError) throw sessionError
     const profile = await api.auth.getUser()
     const resolvedRole = await api.auth.getRole()
-    if (!profile || resolvedRole !== 'admin') {
+    if (!profile || profile.is_blocked || resolvedRole !== 'admin') {
       await supabase.auth.signOut()
       throw new Error('This account does not have administrator access.')
     }
