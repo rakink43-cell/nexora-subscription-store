@@ -206,8 +206,20 @@ export default function AdminProducts() {
     const index = (name: string) => headers.indexOf(name)
     const bySlug = new Map(products.map((product) => [product.slug, product]))
     const updates = lines.slice(1).map((line) => parseCsvRow(line)).filter((cells) => cells.length === headers.length)
-    const matched = updates.map((cells) => ({ cells, product: bySlug.get(cells[index('slug')].trim()) })).filter((row) => row.product)
-    if (!matched.length) { toast.error('No matching product slugs found. Nothing imported.'); return }
+    const matched = updates.map((cells) => ({ cells, product: bySlug.get(cells[index('slug')].trim()), slug: cells[index('slug')].trim() }))
+    const unknownSlugs = [...new Set(matched.filter((row) => !row.product).map((row) => row.slug || '(blank slug)'))]
+    if (unknownSlugs.length) {
+      toast.error('CSV contains unknown product slugs', unknownSlugs.slice(0, 5).join(', ') + (unknownSlugs.length > 5 ? ', …' : '') + '. Nothing imported.')
+      return
+    }
+    const slugCounts = new Map<string, number>()
+    for (const row of matched) slugCounts.set(row.slug, (slugCounts.get(row.slug) ?? 0) + 1)
+    const duplicateSlugs = [...slugCounts].filter(([, count]) => count > 1).map(([slug]) => slug)
+    if (duplicateSlugs.length) {
+      toast.error('CSV contains duplicate product slugs', duplicateSlugs.slice(0, 5).join(', ') + (duplicateSlugs.length > 5 ? ', …' : '') + '. Nothing imported.')
+      return
+    }
+    if (!matched.length) { toast.error('No product rows found. Nothing imported.'); return }
 
     // Validate every matched row before writing, avoiding silent skips and
     // preventing malformed CSV from partially changing the catalogue.
