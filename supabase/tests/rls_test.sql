@@ -347,6 +347,37 @@ select tests.expect_error(
          current_setting('nexora.test.order_a_no'), current_setting('nexora.test.order_a_token')),
   'a second payment submission on the same order is rejected');
 
+-- A provider transaction reference cannot be reused across separate orders.
+do $
+declare
+  v_product uuid;
+  v_result jsonb;
+  v_order_id uuid;
+  v_order_no text;
+  v_access_token uuid;
+begin
+  select id into v_product from public.products where slug = 'netflix-premium-4k';
+  v_result := public.place_order(
+    jsonb_build_array(jsonb_build_object('product_id', v_product, 'quantity', 1)),
+    'Customer A', 'rls-test-a@nexora.test', '01711111111',
+    'bkash'::public.payment_method, null, 'duplicate transaction test'
+  );
+  v_order_id := (v_result ->> 'order_id')::uuid;
+  v_order_no := v_result ->> 'order_number';
+  v_access_token := (v_result ->> 'access_token')::uuid;
+
+  perform tests.expect_error(
+    format('select public.submit_payment(%L, %L, ''bkash'', ''trx12345a'', ''01711111111'')',
+           v_order_no, v_access_token),
+    'the same transaction ID cannot be submitted for another order');
+
+  delete from public.notifications where order_id = v_order_id;
+  delete from public.order_status_history where order_id = v_order_id;
+  delete from public.payments where order_id = v_order_id;
+  delete from public.order_items where order_id = v_order_id;
+  delete from public.orders where id = v_order_id;
+end $;
+
 select tests.expect_error(
   'select public.admin_verify_payment(gen_random_uuid(), ''verified''::public.payment_status, null)',
   'customer cannot call admin_verify_payment');
