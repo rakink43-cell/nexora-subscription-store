@@ -310,6 +310,9 @@ export interface DashboardStats {
   pending_orders: number
   completed_orders: number
   total_customers: number
+  signups_today: number
+  total_page_views: number
+  page_views_today: number
   total_products: number
   unread_notifications: number
   open_support: number
