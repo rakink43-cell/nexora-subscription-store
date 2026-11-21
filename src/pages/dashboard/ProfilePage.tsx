@@ -63,7 +63,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-4">
-      <div className="nx-card p-5">
+      <div className="nx-card nx-game-profile-panel p-5">
         <h2 className="font-display text-base font-bold text-white">Profile details</h2>
         <p className="mt-1 text-[12px] text-white/45">
           Keep these up to date — we use them for delivery and support.
@@ -117,7 +117,7 @@ export default function ProfilePage() {
         </form>
       </div>
 
-      <div className="nx-card p-5">
+      <div className="nx-card nx-game-profile-panel p-5">
         <h2 className="flex items-center gap-2 font-display text-base font-bold text-white">
           <Lock className="h-4 w-4 text-[#6EC1FF]" aria-hidden />
           Password

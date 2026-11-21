@@ -73,7 +73,7 @@ export default function DashboardHome() {
         <StatCard icon={Wallet} label="Total spent" value={formatBDT(spent)} loading={loading} />
       </div>
 
-      <div className="nx-card p-5">
+      <div className="nx-card nx-game-dashboard-panel p-5">
         <div className="mb-3.5 flex items-center justify-between">
           <h2 className="font-display text-base font-bold text-white">Recent orders</h2>
           <Link
@@ -131,7 +131,7 @@ export default function DashboardHome() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="nx-card p-5">
+        <div className="nx-card nx-game-dashboard-panel p-5">
           <h3 className="text-[13.5px] font-semibold text-white">Account</h3>
           <dl className="mt-2.5 space-y-1.5 text-[12.5px]">
             <div className="flex justify-between gap-3">
@@ -152,7 +152,7 @@ export default function DashboardHome() {
           </ButtonLink>
         </div>
 
-        <div className="nx-card p-5">
+        <div className="nx-card nx-game-dashboard-panel p-5">
           <h3 className="text-[13.5px] font-semibold text-white">Need a hand?</h3>
           <p className="mt-1.5 text-[12px] leading-relaxed text-white/45">
             Renewals, replacements or a new plan recommendation — our team replies on WhatsApp within
@@ -193,7 +193,7 @@ function StatCard({
   }[accent]
 
   return (
-    <div className="nx-card p-4">
+    <div className="nx-card nx-game-stat-card p-4">
       <span className={`grid h-8 w-8 place-items-center rounded-lg border ${colors}`}>
         <Icon className="h-4 w-4" />
       </span>

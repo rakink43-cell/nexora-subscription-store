@@ -14,8 +14,8 @@ export default function DashboardLayout() {
   const { user, isAdmin } = useAuth()
 
   return (
-    <div className="nx-container py-8">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="nx-container nx-game-dashboard py-8">
+      <div className="nx-game-dashboard-header mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-[#008CFF] to-[#F00016] text-sm font-bold text-white">
             {initials(user?.full_name ?? user?.email ?? 'N')}
@@ -41,7 +41,7 @@ export default function DashboardLayout() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <nav className="lg:sticky lg:top-24 lg:self-start" aria-label="Dashboard">
+        <nav className="nx-game-dashboard-nav lg:sticky lg:top-24 lg:self-start" aria-label="Dashboard">
           <div className="nx-scroll-x lg:flex-col lg:gap-0.5 lg:overflow-visible">
             {NAV.map((item) => (
               <NavLink
