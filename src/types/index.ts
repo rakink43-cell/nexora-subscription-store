@@ -334,6 +334,7 @@ export interface CartLine {
   originalPrice: number
   quantity: number
   availability: Availability
+  newUserOfferEnabled?: boolean
 }
 
 export interface CheckoutDetails {
