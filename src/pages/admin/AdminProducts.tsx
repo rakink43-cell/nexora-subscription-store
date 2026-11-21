@@ -33,6 +33,7 @@ import {
   slugify,
 } from '../../lib/utils'
 import type { Product } from '../../types'
+import { validateStoreImage } from '../../lib/imageValidation'
 
 const EMPTY: Partial<Product> = {
   name: '',
@@ -574,17 +575,9 @@ function ProductFormModal({
   }
 
   const uploadImage = async (file: File) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp']
-    if (!allowed.includes(file.type)) {
-      toast.error('Please choose a JPG, PNG or WEBP image.')
-      return
-    }
-    if (file.size > 4 * 1024 * 1024) {
-      toast.error('Image must be smaller than 4 MB.')
-      return
-    }
     setUploading(true)
     try {
+      await validateStoreImage(file)
       if (!('uploadProductImage' in api.admin)) {
         throw new Error('Image upload requires a connected Supabase project.')
       }
