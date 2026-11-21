@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 700" fill="none">
+<defs>
+ <linearGradient id="hood" x1="105" y1="80" x2="410" y2="480" gradientUnits="userSpaceOnUse"><stop stop-color="#FF9BF4"/><stop offset=".27" stop-color="#D447F5"/><stop offset=".63" stop-color="#7029D8"/><stop offset="1" stop-color="#21105B"/></linearGradient>
+ <linearGradient id="coat" x1="100" y1="350" x2="440" y2="650" gradientUnits="userSpaceOnUse"><stop stop-color="#A93DEB"/><stop offset=".48" stop-color="#5E23B5"/><stop offset="1" stop-color="#17143F"/></linearGradient>
+ <linearGradient id="face" x1="170" y1="180" x2="365" y2="365" gradientUnits="userSpaceOnUse"><stop stop-color="#152B62"/><stop offset=".55" stop-color="#080D2C"/><stop offset="1" stop-color="#030719"/></linearGradient>
+ <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9AFFFF"/><stop offset="1" stop-color="#00B9FF"/></linearGradient>
+ <linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFB4F6"/><stop offset="1" stop-color="#FF35C8"/></linearGradient>
+ <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+</defs>
+<ellipse cx="272" cy="654" rx="190" ry="25" fill="#A52EFF" opacity=".3" filter="url(#shadow)"/>
+<!-- floating headphones -->
+<path d="M123 300V224C123 107 198 43 277 43S431 107 431 224V300" stroke="#140A3D" stroke-width="38" stroke-linecap="round"/>
+<path d="M123 300V224C123 107 198 43 277 43S431 107 431 224V300" stroke="url(#pink)" stroke-width="24" stroke-linecap="round"/>
+<path d="M125 219C144 119 205 79 278 79S404 119 429 219" stroke="#8DFFFF" stroke-opacity=".75" stroke-width="6" stroke-linecap="round" filter="url(#glow)"/>
+<rect x="88" y="214" width="78" height="152" rx="34" fill="#20104F" stroke="#FF55D5" stroke-width="10"/>
+<rect x="101" y="231" width="53" height="119" rx="25" fill="url(#hood)" stroke="#7AFBFF" stroke-width="5"/>
+<rect x="374" y="214" width="78" height="152" rx="34" fill="#20104F" stroke="#20D9FF" stroke-width="10"/>
+<rect x="387" y="231" width="53" height="119" rx="25" fill="url(#hood)" stroke="#E45BFF" stroke-width="5"/>
+<!-- body -->
+<path d="M106 397C130 352 180 331 270 331S410 355 434 397L484 586C490 611 471 628 446 628H94C69 628 50 611 56 586L106 397Z" fill="url(#coat)" stroke="#190B4B" stroke-width="18" stroke-linejoin="round"/>
+<path d="M118 405C159 371 203 359 270 359S381 371 422 405" stroke="#F68BFF" stroke-opacity=".8" stroke-width="8" stroke-linecap="round"/>
+<!-- hoodie center and straps -->
+<path d="M224 362L203 616H335L314 362" fill="#15112F" stroke="#0B0923" stroke-width="10"/>
+<path d="M205 375L184 565L223 580L248 386" fill="#28204B" stroke="#A44CFF" stroke-width="8"/>
+<path d="M335 375L356 565L317 580L292 386" fill="#28204B" stroke="#2DDFFF" stroke-width="8"/>
+<path d="M270 365V612" stroke="#7CEBFF" stroke-width="8" stroke-linecap="round"/>
+<path d="M258 420H282M258 454H282M258 488H282" stroke="#F6A5FF" stroke-width="7" stroke-linecap="round"/>
+<!-- hood silhouette -->
+<path d="M101 295C91 183 142 81 260 68C377 56 442 151 438 280L420 351C397 390 355 412 319 420L270 390L219 420C166 405 123 372 110 333L101 295Z" fill="url(#hood)" stroke="#210A55" stroke-width="18" stroke-linejoin="round"/>
+<path d="M122 273C128 167 181 111 270 108C356 105 405 167 417 273" stroke="#FFB7F7" stroke-opacity=".75" stroke-width="8" stroke-linecap="round"/>
+<path d="M133 286C148 205 192 160 270 160S392 205 407 286L389 331C359 372 318 391 270 391S181 372 151 331L133 286Z" fill="url(#face)" stroke="#070A24" stroke-width="14"/>
+<!-- face neon eyes -->
+<g filter="url(#glow)" stroke="url(#cyan)" stroke-width="18" stroke-linecap="round"><path d="M194 235L230 271M230 235L194 271"/><path d="M310 235L346 271M346 235L310 271"/></g>
+<path d="M190 315Q270 372 350 315" stroke="url(#pink)" stroke-width="24" stroke-linecap="round" filter="url(#glow)"/>
+<path d="M208 324L216 337M238 337L242 345M270 341V349M300 337L304 345M328 324L336 337" stroke="#FFF1FF" stroke-width="6" stroke-linecap="round"/>
+<!-- sleeves and cuffs -->
+<path d="M103 421L55 501C43 521 49 545 69 557L119 586L160 531L132 494L158 452" fill="url(#hood)" stroke="#1B0B4A" stroke-width="16" stroke-linejoin="round"/>
+<path d="M437 421L485 501C497 521 491 545 471 557L421 586L380 531L408 494L382 452" fill="url(#hood)" stroke="#1B0B4A" stroke-width="16" stroke-linejoin="round"/>
+<path d="M63 539L119 571M477 539L421 571" stroke="#19DFFF" stroke-width="10" stroke-linecap="round"/>
+<!-- hands and peace gesture -->
+<path d="M62 551C45 539 32 516 37 497L49 448C53 431 68 425 80 435C89 443 87 456 84 469L78 493L96 466C106 452 122 452 132 462C141 471 136 486 127 498L112 522C101 542 84 558 62 551Z" fill="#25105A" stroke="#E75BFF" stroke-width="10" stroke-linejoin="round"/>
+<path d="M53 448L61 387C63 371 78 363 90 371C101 378 99 393 97 407L84 469" fill="#32136C" stroke="#19DFFF" stroke-width="10" stroke-linejoin="round"/>
+<path d="M88 438L105 384C110 369 126 365 137 374C148 383 141 398 136 411L127 498" fill="#32136C" stroke="#D65BFF" stroke-width="10" stroke-linejoin="round"/>
+<!-- belt and utility accents -->
+<path d="M109 607H432" stroke="#100B2E" stroke-width="20" stroke-linecap="round"/>
+<path d="M109 607H432" stroke="#E14BFF" stroke-width="7" stroke-linecap="round"/>
+<rect x="246" y="588" width="49" height="41" rx="10" fill="#10112F" stroke="#3BE7FF" stroke-width="7"/>
+<path d="M270 598V619M259 608H281" stroke="#FF5EDB" stroke-width="5" stroke-linecap="round"/>
+<!-- highlights -->
+<path d="M153 136L174 115M365 142L383 161M145 350L164 369M393 352L374 371" stroke="#FFF1FF" stroke-opacity=".55" stroke-width="6" stroke-linecap="round"/>
+<g filter="url(#glow)"><path d="M465 170L478 192L501 198L478 205L465 229L458 205L435 198L458 192L465 170Z" fill="#8DFFFF"/><path d="M77 315L86 330L102 335L86 340L77 357L72 340L56 335L72 330L77 315Z" fill="#FF83E8"/></g>
+</svg>
