@@ -454,6 +454,14 @@ export default function AdminProducts() {
                           <Star className="h-3 w-3 fill-current" aria-hidden />
                         </span>
                       )}
+                      {p.new_user_offer_enabled && (
+                        <span
+                          title={`First 3 eligible orders: ${formatBDT(Number(p.discounted_price) * 0.1)} each`}
+                          className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[9.5px] font-semibold text-rose-300"
+                        >
+                          Offer
+                        </span>
+                      )}
                       <span
                         className={cn(
                           'rounded px-1.5 py-0.5 text-[9.5px] font-semibold',
