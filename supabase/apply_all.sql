@@ -2749,3 +2749,233 @@ begin
   end if;
 end;
 $migration$;
+
+
+-- ===========================================================================
+-- >>> 20261122111000_validate_coupon_input_bounds.sql
+-- ===========================================================================
+create or replace function public.validate_coupon(_code text, _subtotal numeric)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  c public.coupons;
+  v_discount numeric := 0;
+  v_code text;
+begin
+  v_code := trim(coalesce(_code, ''));
+
+  if length(v_code) = 0 or length(v_code) > 64 then
+    return jsonb_build_object('valid', false, 'message', 'Please enter a valid coupon code.');
+  end if;
+
+  if _subtotal is null or _subtotal < 0 or _subtotal > 100000000
+     or _subtotal::text in ('NaN', 'Infinity', '-Infinity') then
+    return jsonb_build_object('valid', false, 'message', 'Order subtotal is invalid.');
+  end if;
+
+  select * into c from public.coupons
+   where lower(code) = lower(v_code) and is_active = true;
+
+  if not found then
+    return jsonb_build_object('valid', false, 'message', 'Coupon code not found.');
+  end if;
+  if c.starts_at > now() then
+    return jsonb_build_object('valid', false, 'message', 'This coupon is not active yet.');
+  end if;
+  if c.expires_at is not null and c.expires_at < now() then
+    return jsonb_build_object('valid', false, 'message', 'This coupon has expired.');
+  end if;
+  if c.usage_limit is not null and c.used_count >= c.usage_limit then
+    return jsonb_build_object('valid', false, 'message', 'This coupon has reached its usage limit.');
+  end if;
+  if _subtotal < c.min_order then
+    return jsonb_build_object('valid', false,
+      'message', 'Minimum order for this coupon is ৳' || to_char(c.min_order, 'FM999999990'));
+  end if;
+
+  if c.type = 'percentage' then
+    v_discount := round(_subtotal * c.value / 100.0, 2);
+    if c.max_discount is not null then
+      v_discount := least(v_discount, c.max_discount);
+    end if;
+  else
+    v_discount := least(c.value, _subtotal);
+  end if;
+
+  return jsonb_build_object(
+    'valid', true,
+    'code', upper(c.code),
+    'type', c.type,
+    'value', c.value,
+    'discount', v_discount,
+    'description', c.description,
+    'message', 'Coupon applied.'
+  );
+end;
+$function$;
+
+
+-- ===========================================================================
+-- >>> 20261122111500_cast_payment_method_in_active_checks.sql
+-- ===========================================================================
+-- payment_methods.method is text, while RPC parameters use the payment_method enum.
+-- Cast the enum to text to avoid runtime operator type errors during checkout.
+do $migration$
+declare
+  v_definition text;
+begin
+  select pg_get_functiondef('public.place_order(jsonb,text,text,text,public.payment_method,text,text)'::regprocedure)
+    into v_definition;
+  v_definition := replace(
+    v_definition,
+    'where method = _payment_method and is_active = true',
+    'where method = _payment_method::text and is_active = true'
+  );
+  execute v_definition;
+
+  select pg_get_functiondef('public.submit_payment(text,uuid,public.payment_method,text,text,numeric,text)'::regprocedure)
+    into v_definition;
+  v_definition := replace(
+    v_definition,
+    'where method = _method and is_active = true',
+    'where method = _method::text and is_active = true'
+  );
+  execute v_definition;
+end;
+$migration$;
+
+
+-- ===========================================================================
+-- >>> 20261122112000_require_verified_email_for_guest_order_claim.sql
+-- ===========================================================================
+create or replace function public.claim_guest_order(_order_number text, _email text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  v_order public.orders;
+  v_verified_email text;
+  v_email_confirmed_at timestamptz;
+begin
+  if auth.uid() is null then
+    raise exception 'Please sign in first.' using errcode = '42501';
+  end if;
+
+  -- Claiming a guest order is an ownership transfer. Require a verified account
+  -- email matching both the submitted email and the order's customer email.
+  select lower(trim(email)), email_confirmed_at
+    into v_verified_email, v_email_confirmed_at
+    from auth.users
+   where id = auth.uid();
+
+  if v_email_confirmed_at is null or v_verified_email is null then
+    raise exception 'Verify your account email before claiming an order.' using errcode = '42501';
+  end if;
+
+  if v_verified_email <> lower(trim(coalesce(_email, ''))) then
+    raise exception 'Use the verified email address on your account.' using errcode = '42501';
+  end if;
+
+  select * into v_order
+    from public.orders
+   where upper(order_number) = upper(trim(_order_number))
+     and lower(customer_email) = v_verified_email
+     and user_id is null
+   for update;
+
+  if not found then
+    return jsonb_build_object('ok', false, 'message', 'No matching guest order found.');
+  end if;
+
+  update public.orders set user_id = auth.uid() where id = v_order.id;
+
+  insert into public.payments (order_id, method, amount)
+  select v_order.id, v_order.payment_method, v_order.total
+  where not exists (select 1 from public.payments where order_id = v_order.id);
+
+  return jsonb_build_object('ok', true, 'order_number', v_order.order_number);
+end;
+$function$;
+
+
+-- ===========================================================================
+-- >>> 20261122113000_bound_public_analytics_event_payloads.sql
+-- ===========================================================================
+-- Bound public analytics input to reduce abusive or oversized event writes.
+-- Keep event names flexible for existing frontend event tracking.
+drop policy if exists "analytics: insert anyone" on public.analytics_events;
+
+create policy "analytics: bounded public insert"
+on public.analytics_events
+for insert
+to anon, authenticated
+with check (
+  length(btrim(event_name)) between 1 and 80
+  and (path is null or length(path) <= 512)
+  and jsonb_typeof(metadata) = 'object'
+  and octet_length(metadata::text) <= 2048
+);
+
+
+-- ===========================================================================
+-- >>> 20261122113500_include_visit_and_signup_metrics_in_admin_stats.sql
+-- ===========================================================================
+create or replace function public.admin_dashboard_stats()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  v jsonb;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  select jsonb_build_object(
+    'total_sales', coalesce((select sum(total) from public.orders
+                              where status in ('completed', 'processing', 'payment_verified')), 0),
+    'total_orders', (select count(*) from public.orders),
+    'pending_orders', (select count(*) from public.orders
+                        where status in ('pending_payment', 'payment_submitted')),
+    'completed_orders', (select count(*) from public.orders where status = 'completed'),
+    'total_customers', (select count(*) from public.profiles),
+    'signups_today', (select count(*) from public.profiles
+                        where created_at >= date_trunc('day', now())),
+    'total_page_views', (select count(*) from public.analytics_events
+                          where event_name = 'page_view'),
+    'page_views_today', (select count(*) from public.analytics_events
+                          where event_name = 'page_view'
+                            and created_at >= date_trunc('day', now())),
+    'total_products', (select count(*) from public.products where is_active),
+    'unread_notifications', (select count(*) from public.notifications where is_read = false),
+    'open_support', (select count(*) from public.support_messages where status = 'open'),
+    'revenue_today', coalesce((select sum(total) from public.orders
+                                where status in ('completed', 'processing', 'payment_verified')
+                                  and created_at >= date_trunc('day', now())), 0),
+    'orders_today', (select count(*) from public.orders
+                      where created_at >= date_trunc('day', now())),
+    'sales_series', coalesce((
+      select jsonb_agg(jsonb_build_object('day', d, 'total', coalesce(s.total, 0)) order by d)
+      from generate_series((current_date - interval '13 days')::date, current_date, '1 day') d
+      left join (
+        select date_trunc('day', created_at)::date as day, sum(total) as total
+          from public.orders
+         where status in ('completed', 'processing', 'payment_verified')
+           and created_at >= current_date - interval '13 days'
+         group by 1
+      ) s on s.day = d
+    ), '[]'::jsonb)
+  ) into v;
+
+  return v;
+end;
+$function$;
