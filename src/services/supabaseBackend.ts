@@ -453,20 +453,42 @@ export const support = {
 export const admin = {
   async analytics() {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    const [eventResult, profileResult, roleResult] = await Promise.all([
-      sb().from('analytics_events').select('event_name,path,metadata,created_at').gte('created_at', since).order('created_at', { ascending: true }).limit(5000),
-      sb().from('profiles').select('id,created_at').gte('created_at', since),
+    const [roleResult] = await Promise.all([
       sb().from('user_roles').select('user_id').in('role', ['admin', 'staff']),
     ])
-    if (eventResult.error) fail(eventResult.error, 'Could not load analytics.')
-    if (profileResult.error) fail(profileResult.error, 'Could not load account signups.')
     if (roleResult.error) fail(roleResult.error, 'Could not filter administrator accounts.')
-    const events = eventResult.data ?? []
+
+    // Fetch in pages so the dashboard doesn't silently undercount after the
+    // PostgREST row limit (the previous fixed 5,000-row query could truncate).
+    const fetchAll = async <T,>(query: any): Promise<T[]> => {
+      const rows: T[] = []
+      const pageSize = 1000
+      for (let offset = 0; ; offset += pageSize) {
+        const result = await query.range(offset, offset + pageSize - 1)
+        if (result.error) throw result.error
+        const page = (result.data ?? []) as T[]
+        rows.push(...page)
+        if (page.length < pageSize) break
+      }
+      return rows
+    }
+
+    let events: { event_name: string; path: string | null; metadata: Record<string, unknown> | null; created_at: string }[]
+    let profiles: { id: string; created_at: string }[]
+    try {
+      ;[events, profiles] = await Promise.all([
+        fetchAll(sb().from('analytics_events').select('event_name,path,metadata,created_at').gte('created_at', since).order('created_at', { ascending: true })),
+        fetchAll(sb().from('profiles').select('id,created_at').gte('created_at', since).order('created_at', { ascending: true })),
+      ])
+    } catch (error) {
+      fail(error, 'Could not load analytics.')
+    }
+
     const adminIds = new Set((roleResult.data ?? []).map((row) => row.user_id))
-    const profiles = (profileResult.data ?? []).filter((profile) => !adminIds.has(profile.id))
-    // Older builds may have recorded admin navigation; exclude it from public metrics.
+    const publicProfiles = profiles.filter((profile) => !adminIds.has(profile.id))
+    // Exclude admin navigation from public traffic metrics.
     const views = events.filter((event) => event.event_name === 'page_view' && !(event.path ?? '').startsWith('/admin'))
-    const visitors = new Set(views.map((event) => (event.metadata as Record<string, unknown>)?.visitor_id).filter((id): id is string => typeof id === 'string'))
+    const visitors = new Set(views.map((event) => event.metadata?.visitor_id).filter((id): id is string => typeof id === 'string'))
     const daily = Array.from({ length: 14 }, (_, index) => {
       const day = new Date()
       day.setDate(day.getDate() - (13 - index))
@@ -474,7 +496,7 @@ export const admin = {
       return {
         day: key,
         views: views.filter((event) => event.created_at.slice(0, 10) === key).length,
-        signups: profiles.filter((profile) => profile.created_at.slice(0, 10) === key).length,
+        signups: publicProfiles.filter((profile) => profile.created_at.slice(0, 10) === key).length,
       }
     })
     const pages = Object.entries(views.reduce<Record<string, number>>((acc, event) => {
@@ -482,7 +504,7 @@ export const admin = {
       acc[path] = (acc[path] ?? 0) + 1
       return acc
     }, {})).map(([path, count]) => ({ path, count })).sort((a, b) => b.count - a.count).slice(0, 8)
-    return { page_views: views.length, visitors: visitors.size, signups: profiles.length, daily, pages }
+    return { page_views: views.length, visitors: visitors.size, signups: publicProfiles.length, daily, pages }
   },
 
   async stats(): Promise<DashboardStats> {
