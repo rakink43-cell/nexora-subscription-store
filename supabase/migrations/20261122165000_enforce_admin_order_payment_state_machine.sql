@@ -24,6 +24,9 @@ BEGIN
     RAISE EXCEPTION 'Administrator access required.' USING errcode = '42501';
   END IF;
 
+  IF _status IS NULL THEN
+    RAISE EXCEPTION 'A target order status is required.' USING errcode = 'P0001';
+  END IF;
   IF v_note IS NOT NULL AND length(v_note) > 500 THEN
     RAISE EXCEPTION 'Status note is too long (maximum 500 characters).' USING errcode = 'P0001';
   END IF;
@@ -115,7 +118,7 @@ BEGIN
     RAISE EXCEPTION 'Administrator access required.' USING errcode = '42501';
   END IF;
 
-  IF _decision NOT IN ('verified', 'rejected') THEN
+  IF _decision IS NULL OR _decision NOT IN ('verified', 'rejected') THEN
     RAISE EXCEPTION 'Decision must be verified or rejected.' USING errcode = 'P0001';
   END IF;
 
