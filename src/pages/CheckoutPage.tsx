@@ -160,7 +160,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="nx-container py-8">
+    <div className="nx-container nx-game-checkout py-8">
       <div className="mb-6">
         <Link
           to="/cart"
@@ -180,7 +180,7 @@ export default function CheckoutPage() {
       <form id="checkout-form" onSubmit={placeOrder} className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-4">
           {/* customer details */}
-          <section className="nx-card p-5" aria-labelledby="customer-heading">
+          <section className="nx-card nx-game-checkout-section p-5" aria-labelledby="customer-heading">
             <h2 id="customer-heading" className="mb-4 flex items-center gap-2 font-display text-base font-bold text-white">
               <span className="grid h-6 w-6 place-items-center rounded-md bg-[#008CFF]/15 text-[11px] font-bold text-[#6EC1FF]">1</span>
               Customer information
@@ -247,7 +247,7 @@ export default function CheckoutPage() {
           </section>
 
           {/* payment method */}
-          <section className="nx-card p-5" aria-labelledby="payment-heading">
+          <section className="nx-card nx-game-checkout-section nx-game-payment-section p-5" aria-labelledby="payment-heading">
             <h2 id="payment-heading" className="mb-1 flex items-center gap-2 font-display text-base font-bold text-white">
               <span className="grid h-6 w-6 place-items-center rounded-md bg-[#008CFF]/15 text-[11px] font-bold text-[#6EC1FF]">2</span>
               Payment method
@@ -271,7 +271,7 @@ export default function CheckoutPage() {
                         onClick={() => setMethod(m.method_key)}
                         aria-pressed={active}
                         className={cn(
-                          'relative overflow-hidden rounded-xl border p-3 text-left transition',
+                          'nx-game-payment-choice relative overflow-hidden rounded-xl border p-3 text-left transition',
                           active
                             ? 'border-[#008CFF] bg-[#008CFF]/10 shadow-[0_0_0_1px_rgba(0,140,255,0.4)]'
                             : 'border-white/10 bg-white/[0.03] hover:border-white/25',
@@ -298,7 +298,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {selectedMethod && (
-                  <div className="mt-4 rounded-xl border border-[#008CFF]/25 bg-[#008CFF]/[0.06] p-4">
+                  <div className="nx-game-payment-instructions mt-4 rounded-xl border border-[#008CFF]/25 bg-[#008CFF]/[0.06] p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">
