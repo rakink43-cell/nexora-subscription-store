@@ -49,6 +49,11 @@ export function ProductCard({
                 {off}% OFF
               </span>
             )}
+            {product.new_user_offer_enabled && (
+              <span className="rounded-md border border-rose-300/25 bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-100 shadow-lg">
+                90% new account offer
+              </span>
+            )}
             {product.badge && (
               <span className="rounded-md border border-white/15 bg-black/65 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur">
                 {product.badge}
@@ -106,6 +111,11 @@ export function ProductCard({
                 </span>
               )}
             </div>
+            {product.new_user_offer_enabled && (
+              <p className="mt-0.5 truncate text-[10.5px] font-semibold text-rose-300">
+                New account offer: {formatBDT(Math.round(Number(product.discounted_price) * 10) / 100)} · first 3 orders
+              </p>
+            )}
             <p className="mt-0.5 truncate text-[10.5px] text-emerald-400/80">
               {product.delivery_time ?? 'Instant delivery'}
             </p>
