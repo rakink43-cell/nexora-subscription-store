@@ -114,7 +114,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="nx-container grid min-h-[calc(100vh-12rem)] place-items-center py-12">
+    <div className="nx-container nx-game-auth-page grid min-h-[calc(100vh-12rem)] place-items-center py-12">
       <div className="w-full max-w-sm">
         <div className="mb-7 flex flex-col items-center text-center">
           <Logo size="lg" withWordmark={false} />
@@ -130,7 +130,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="nx-card p-5">
+        <div className="nx-card nx-game-auth-card p-5">
           {recoveryMode ? (
             <form onSubmit={saveNewPassword} className="space-y-3.5">
               <Field label="New password" required htmlFor="new-password" hint="At least 8 characters.">
