@@ -72,7 +72,7 @@ export default function AdminAnalytics() {
       <div className="mt-4 grid gap-4 xl:grid-cols-[1.5fr_1fr]">
         <AdminCard title="Daily traffic" description="Page views over the last 14 days">
           {loading ? <Skeleton className="h-40 w-full" /> : data?.daily.length ? (
-            <div className="flex h-40 items-end gap-1.5">
+            <div role="img" aria-label={`Daily page views for the last 14 days: ${data.daily.map((day) => `${day.day}, ${day.views} views`).join('; ')}`} className="flex h-40 items-end gap-1.5">
               {data.daily.map((day) => (
                 <div key={day.day} title={`${day.day}: ${day.views} page views`} className="flex min-w-0 flex-1 flex-col items-center justify-end">
                   <span className="mb-1 text-[9px] text-white/35">{day.views || ''}</span>
@@ -99,7 +99,7 @@ export default function AdminAnalytics() {
       <div className="mt-4">
         <AdminCard title="Daily account signups" description="New customer accounts created over the last 14 days">
           {loading ? <Skeleton className="h-32 w-full" /> : data?.daily.length ? (
-            <div className="flex h-32 items-end gap-1.5">
+            <div role="img" aria-label={`Daily account signups for the last 14 days: ${data.daily.map((day) => `${day.day}, ${day.signups} signups`).join('; ')}`} className="flex h-32 items-end gap-1.5">
               {data.daily.map((day) => (
                 <div key={day.day} title={`${day.day}: ${day.signups} new signups`} className="flex min-w-0 flex-1 flex-col items-center justify-end">
                   <span className="mb-1 text-[9px] text-white/35">{day.signups || ''}</span>
