@@ -53,8 +53,8 @@ export default function MyOrdersPage() {
   }, [orders, filter, search])
 
   return (
-    <div>
-      <div className="mb-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="nx-game-orders">
+      <div className="nx-game-page-heading mb-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="font-display text-lg font-bold text-white">My orders</h2>
         <div className="relative sm:w-64">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" aria-hidden />
