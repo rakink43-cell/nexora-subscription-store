@@ -72,7 +72,7 @@ export default function AdminSettings() {
         title="Website settings"
         description="Hero copy, contact details, payment instructions and SEO — all editable here."
         action={
-          <Button size="sm" onClick={() => void saveSettings()} loading={saving} icon={<Save className="h-3.5 w-3.5" />}>
+          <Button size="sm" onClick={() => void saveSettings()} loading={saving} disabled={bannerUploading} icon={<Save className="h-3.5 w-3.5" />}>
             Save changes
           </Button>
         }
@@ -182,6 +182,14 @@ export default function AdminSettings() {
                     const file = e.target.files?.[0]
                     e.target.value = ''
                     if (!file) return
+                    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                      toast.error('Please choose a JPG, PNG or WEBP image.')
+                      return
+                    }
+                    if (file.size > 4 * 1024 * 1024) {
+                      toast.error('Banner image must be smaller than 4 MB.')
+                      return
+                    }
                     setBannerUploading(true)
                     try {
                       const uploader = (api.admin as { uploadProductImage?: (file: File) => Promise<string> }).uploadProductImage
