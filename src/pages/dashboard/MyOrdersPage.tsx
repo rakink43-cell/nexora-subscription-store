@@ -113,7 +113,7 @@ export default function MyOrdersPage() {
               : 'Try another filter or clear your search.'
           }
           action={
-            orders.length === 0 ? (
+            !error && orders.length === 0 ? (
               <ButtonLink to="/products" size="sm" icon={<ShoppingBag className="h-3.5 w-3.5" />}>
                 Browse subscriptions
               </ButtonLink>
