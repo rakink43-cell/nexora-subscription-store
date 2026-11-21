@@ -17,6 +17,7 @@ export default function AdminSettings() {
   const [methods, setMethods] = useState<PaymentMethodConfig[]>(paymentMethods)
   const [saving, setSaving] = useState(false)
   const [bannerUploading, setBannerUploading] = useState(false)
+  const [ogUploading, setOgUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [newMethod, setNewMethod] = useState({ method_key: '', display_name: '', account_number: '', account_name: '', account_type: 'Personal', instructions: '', payment_type: 'manual' as 'manual' | 'gateway', requires_transaction_id: true })
 
@@ -73,7 +74,7 @@ export default function AdminSettings() {
         title="Website settings"
         description="Hero copy, contact details, payment instructions and SEO — all editable here."
         action={
-          <Button size="sm" onClick={() => void saveSettings()} loading={saving} disabled={bannerUploading} icon={<Save className="h-3.5 w-3.5" />}>
+          <Button size="sm" onClick={() => void saveSettings()} loading={saving} disabled={bannerUploading || ogUploading} icon={<Save className="h-3.5 w-3.5" />}>
             Save changes
           </Button>
         }
@@ -421,7 +422,44 @@ export default function AdminSettings() {
             </Field>
             <Field label="Social share title"><Input value={form.seo.og_title} onChange={(e) => patch('seo', { og_title: e.target.value })} /></Field>
             <Field label="Social share description"><Textarea value={form.seo.og_description} onChange={(e) => patch('seo', { og_description: e.target.value })} className="min-h-[70px]" /></Field>
-            <Field label="Social share image URL"><Input value={form.seo.og_image} onChange={(e) => patch('seo', { og_image: e.target.value })} /></Field>
+            <Field label="Social share image URL" hint="Paste an image URL or upload a JPG, PNG or WEBP (max 4 MB).">
+              <Input value={form.seo.og_image} onChange={(e) => patch('seo', { og_image: e.target.value })} />
+            </Field>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="nx-btn nx-btn-ghost inline-flex cursor-pointer items-center gap-2 px-3 py-2 text-[11.5px]">
+                <Upload className="h-3.5 w-3.5" aria-hidden />
+                {ogUploading ? 'Uploading social image…' : 'Upload social share image'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  disabled={ogUploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    e.target.value = ''
+                    if (!file) return
+                    setOgUploading(true)
+                    try {
+                      await validateStoreImage(file)
+                      const uploader = (api.admin as { uploadProductImage?: (file: File) => Promise<string> }).uploadProductImage
+                      if (!uploader) throw new Error('Image upload requires a connected Supabase project.')
+                      const url = await uploader(file)
+                      patch('seo', { og_image: url })
+                      toast.success('Social share image uploaded', 'Save changes to publish it.')
+                    } catch (err) {
+                      toast.error('Social image upload failed', err instanceof Error ? err.message : undefined)
+                    } finally {
+                      setOgUploading(false)
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            {form.seo.og_image && (
+              <div className="overflow-hidden rounded-lg border border-white/10">
+                <img src={form.seo.og_image} alt="Social share image preview" className="max-h-48 w-full object-contain" />
+              </div>
+            )}
           </div>
           <div className="mt-4 rounded-lg border border-white/8 bg-white/[0.02] p-3">
             <p className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-white/35">
