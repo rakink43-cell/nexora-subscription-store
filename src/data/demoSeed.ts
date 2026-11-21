@@ -156,6 +156,7 @@ export const demoProducts: Product[] = seeds.map((s, i) => ({
   duration: s[5],
   original_price: s[6],
   discounted_price: s[7],
+  new_user_offer_enabled: false,
   delivery_info: 'Instant delivery after payment verification. Login details are sent to your email and customer dashboard.',
   delivery_time: s[14],
   availability: s[8],
