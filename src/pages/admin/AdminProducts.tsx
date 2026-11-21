@@ -739,18 +739,19 @@ function ProductFormModal({
           {(form.gallery ?? []).length > 0 && (
             <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
               {(form.gallery ?? []).map((url, index) => (
-                <div key={`${url}-${index`} className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
-                  <img src={url} alt={`Gallery image ${index + 1`} className="aspect-square w-full object-cover" />
+                <div key={`${url}-${index}`} className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]">
+                  <img src={url} alt={`Gallery image ${index + 1}`} className="aspect-square w-full object-cover" />
                   <div className="flex flex-wrap items-center justify-between gap-1 p-1.5">
                     <button type="button" onClick={() => { set('image_url', url); set('gallery', (form.gallery ?? []).filter((_, i) => i !== index)) }} className="rounded px-1 py-0.5 text-[9px] font-semibold text-sky-300 hover:bg-sky-400/10" title="Use as main product image">Set main</button>
                     <div className="flex items-center gap-0.5">
-                      <button type="button" disabled={index === 0} onClick={() => { const gallery = [...(form.gallery ?? [])]; [gallery[index - 1], gallery[index]] = [gallery[index], gallery[index - 1]]; set('gallery', gallery) }} className="rounded px-1 py-0.5 text-[9px] text-white/55 disabled:opacity-25 hover:bg-white/10" aria-label={`Move gallery image ${index + 1`} up">↑</button>
-                      <button type="button" disabled={index === (form.gallery ?? []).length - 1} onClick={() => { const gallery = [...(form.gallery ?? [])]; [gallery[index + 1], gallery[index]] = [gallery[index], gallery[index + 1]]; set('gallery', gallery) }} className="rounded px-1 py-0.5 text-[9px] text-white/55 disabled:opacity-25 hover:bg-white/10" aria-label={`Move gallery image ${index + 1`} down">↓</button>
+                      <button type="button" disabled={index === 0} onClick={() => { const gallery = [...(form.gallery ?? [])]; [gallery[index - 1], gallery[index]] = [gallery[index], gallery[index - 1]]; set('gallery', gallery) }} className="rounded px-1 py-0.5 text-[9px] text-white/55 disabled:opacity-25 hover:bg-white/10" aria-label={`Move gallery image ${index + 1} up`}>↑</button>
+                      <button type="button" disabled={index === (form.gallery ?? []).length - 1} onClick={() => { const gallery = [...(form.gallery ?? [])]; [gallery[index + 1], gallery[index]] = [gallery[index], gallery[index + 1]]; set('gallery', gallery) }} className="rounded px-1 py-0.5 text-[9px] text-white/55 disabled:opacity-25 hover:bg-white/10" aria-label={`Move gallery image ${index + 1} down`}>↓</button>
                     </div>
                     <button type="button" onClick={() => set('gallery', (form.gallery ?? []).filter((_, i) => i !== index))} className="rounded px-1 py-0.5 text-[9px] text-rose-300 hover:bg-rose-500/10">Remove</button>
                   </div>
                 </div>
-              ))}            </div>
+              ))}
+            </div>
           )}
         </Field>
 
