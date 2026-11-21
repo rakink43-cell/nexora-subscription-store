@@ -63,7 +63,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="nx-container grid min-h-[calc(100vh-12rem)] place-items-center py-12">
+    <div className="nx-container nx-game-auth-page nx-game-register grid min-h-[calc(100vh-12rem)] place-items-center py-12">
       <div className="w-full max-w-md">
         <div className="mb-7 flex flex-col items-center text-center">
           <Logo size="lg" withWordmark={false} />
@@ -74,7 +74,7 @@ export default function RegisterPage() {
         </div>
 
         {needsConfirmation ? (
-          <div className="nx-card p-6 text-center">
+          <div className="nx-card nx-game-auth-card p-6 text-center">
             <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-emerald-500/15 text-emerald-400">
               <Check className="h-5 w-5" aria-hidden />
             </span>
@@ -88,7 +88,7 @@ export default function RegisterPage() {
             </Button>
           </div>
         ) : (
-          <div className="nx-card p-5">
+          <div className="nx-card nx-game-auth-card p-5">
             <form onSubmit={submit} className="space-y-3.5">
               <Field label="Full name" required htmlFor="fullName">
                 <div className="relative">
