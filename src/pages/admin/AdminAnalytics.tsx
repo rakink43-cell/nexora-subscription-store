@@ -16,7 +16,7 @@ function exportAnalytics(data: AnalyticsData) {
   // Prevent spreadsheet formula injection from text fields such as page paths.
   const quote = (value: string | number) => {
     const text = String(value)
-    const safe = typeof value === 'string' && /^[\\u0000-\\u0020]*[=+\\-@]/.test(text)
+    const safe = typeof value === 'string' && /^[\u0000-\u0020]*[=+\-@]/.test(text)
       ? `'${text}`
       : text
     return `"${safe.replace(/"/g, '""')}"`
