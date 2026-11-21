@@ -62,6 +62,7 @@ const EMPTY: Partial<Product> = {
   duration: '1 Month',
   original_price: 0,
   discounted_price: 0,
+  new_user_offer_enabled: false,
   delivery_info: 'Instant delivery after payment verification.',
   delivery_time: 'Within 30 minutes',
   availability: 'in_stock',
@@ -369,6 +370,8 @@ export default function AdminProducts() {
           <Button size="sm" variant="subtle" loading={busy} onClick={() => void applyBulk({ is_active: false })}>Hide</Button>
           <Button size="sm" variant="subtle" loading={busy} onClick={() => void applyBulk({ is_featured: true })}>Feature</Button>
           <Button size="sm" variant="subtle" loading={busy} onClick={() => void applyBulk({ is_featured: false })}>Unfeature</Button>
+          <Button size="sm" variant="subtle" loading={busy} onClick={() => void applyBulk({ new_user_offer_enabled: true })}>Enable 90% new-user offer</Button>
+          <Button size="sm" variant="subtle" loading={busy} onClick={() => void applyBulk({ new_user_offer_enabled: false })}>Disable offer</Button>
           <Select value={bulkAvailability} onChange={(e) => setBulkAvailability(e.target.value)} className="w-36 py-1.5 text-[11px]">
             <option value="in_stock">In stock</option>
             <option value="limited">Limited</option>
@@ -857,6 +860,15 @@ function ProductFormModal({
         </div>
 
         <div className="flex flex-wrap gap-4 sm:col-span-2">
+          <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-rose-200">
+            <input
+              type="checkbox"
+              checked={Boolean(form.new_user_offer_enabled)}
+              onChange={(e) => set('new_user_offer_enabled', e.target.checked)}
+              className="h-4 w-4 accent-[#F00016]"
+            />
+            90% off for new accounts (first 3 orders)
+          </label>
           <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-white/70">
             <input
               type="checkbox"
