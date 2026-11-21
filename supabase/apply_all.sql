@@ -2413,3 +2413,339 @@ create index if not exists idx_profiles_created_at
 -- ===========================================================================
 -- NEXORA live hardening: bootstrap_admin is not a public setup endpoint.
 revoke all on function public.bootstrap_admin(text, text) from public, anon, authenticated;
+
+
+-- ===========================================================================
+-- >>> 20261121180950_restrict_anon_admin_checks.sql
+-- ===========================================================================
+-- NEXORA live hardening: admin authorization checks require a signed-in role.
+revoke all on function public.is_admin() from public, anon;
+revoke all on function public.is_super_admin() from public, anon;
+grant execute on function public.is_admin() to authenticated;
+grant execute on function public.is_super_admin() to authenticated;
+
+
+-- ===========================================================================
+-- >>> 20261121182411_revoke_unused_order_helper_rpcs.sql
+-- ===========================================================================
+-- These helper RPCs are not called by the storefront or RLS policies.
+-- lookup_guest_order returned the guest access token from order number + email,
+-- so leaving it callable would allow token disclosure.
+revoke all on function public.lookup_guest_order(text, text) from public, anon, authenticated;
+revoke all on function public.has_role(uuid, public.app_role) from public, anon, authenticated;
+revoke all on function public.can_access_order(public.orders) from public, anon, authenticated;
+
+
+-- ===========================================================================
+-- >>> 20261121182504_harden_payment_submission_validation.sql
+-- ===========================================================================
+-- NEXORA: validate payment submissions server-side and serialize concurrent updates.
+create or replace function public.submit_payment(
+  _order_number text,
+  _access_token uuid,
+  _method public.payment_method,
+  _transaction_id text,
+  _sender_number text default null,
+  _amount numeric default null,
+  _proof_url text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  v_order public.orders;
+  v_payment public.payments;
+  v_sender text;
+  v_proof text;
+begin
+  select * into v_order
+    from public.orders
+   where order_number = upper(trim(_order_number))
+   for update;
+
+  if not found then
+    raise exception 'Order not found.' using errcode = 'P0001';
+  end if;
+
+  if not (
+    public.is_admin()
+    or (v_order.user_id is not null and v_order.user_id = auth.uid())
+    or (v_order.user_id is null and v_order.access_token = _access_token)
+  ) then
+    raise exception 'You are not allowed to update this order.' using errcode = '42501';
+  end if;
+
+  if v_order.status <> 'pending_payment' then
+    raise exception 'Payment for this order has already been submitted.' using errcode = 'P0001';
+  end if;
+
+  if coalesce(trim(_transaction_id), '') !~ '^[A-Za-z0-9-]{4,40}$' then
+    raise exception 'Please enter a valid transaction ID (4–40 letters/numbers).' using errcode = 'P0001';
+  end if;
+
+  if not exists (
+    select 1 from public.payment_methods
+     where method = _method and is_active = true
+  ) then
+    raise exception 'This payment method is currently unavailable.' using errcode = 'P0001';
+  end if;
+
+  if _amount is not null and round(_amount, 2) <> round(v_order.total, 2) then
+    raise exception 'Payment amount must match the order total.' using errcode = 'P0001';
+  end if;
+
+  v_sender := nullif(trim(_sender_number), '');
+  if v_sender is not null and (length(v_sender) < 5 or length(v_sender) > 24
+      or v_sender !~ '^[0-9+ -]+$') then
+    raise exception 'Please enter a valid sender number.' using errcode = 'P0001';
+  end if;
+
+  v_proof := nullif(trim(_proof_url), '');
+  if v_proof is not null and (
+      length(v_proof) > 2048
+      or left(v_proof, length('https://vxorwxecyfhuzzgtyowy.supabase.co/storage/v1/object/public/payment-proofs/'))
+         <> 'https://vxorwxecyfhuzzgtyowy.supabase.co/storage/v1/object/public/payment-proofs/'
+  ) then
+    raise exception 'Payment proof must be uploaded through the NEXORA payment form.' using errcode = 'P0001';
+  end if;
+
+  select * into v_payment
+    from public.payments
+   where order_id = v_order.id
+   order by created_at
+   limit 1
+   for update;
+
+  if not found then
+    insert into public.payments (order_id, method, amount)
+    values (v_order.id, _method, v_order.total)
+    returning * into v_payment;
+  end if;
+
+  update public.payments
+     set method = _method,
+         transaction_id = upper(trim(_transaction_id)),
+         sender_number = v_sender,
+         amount = v_order.total,
+         proof_url = coalesce(v_proof, proof_url),
+         status = 'submitted'
+   where id = v_payment.id;
+
+  update public.orders
+     set status = 'payment_submitted',
+         payment_method = _method
+   where id = v_order.id;
+
+  return jsonb_build_object(
+    'order_number', v_order.order_number,
+    'status', 'payment_submitted',
+    'message', 'Payment submitted. Our team will verify it shortly.'
+  );
+end;
+$function$;
+
+
+-- ===========================================================================
+-- >>> 20261122110000_strict_order_and_coupon_validation.sql
+-- ===========================================================================
+-- NEXORA: validate order input strictly and serialize coupon limit checks.
+create or replace function public.place_order(
+  _items jsonb,
+  _customer_name text,
+  _customer_email text,
+  _customer_phone text,
+  _payment_method public.payment_method,
+  _coupon_code text default null,
+  _customer_note text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  v_order_id uuid;
+  v_order_no text;
+  v_token uuid;
+  v_subtotal numeric := 0;
+  v_discount numeric := 0;
+  v_total numeric := 0;
+  v_item jsonb;
+  v_product public.products;
+  v_qty int;
+  v_lines int := 0;
+  v_coupon jsonb;
+  v_coupon_id uuid;
+  v_coupon_applied boolean := false;
+  v_email text;
+  v_name text;
+  v_phone text;
+  v_note text;
+  v_code text;
+  v_product_id text;
+  v_qty_text text;
+begin
+  if _items is null or jsonb_typeof(_items) <> 'array'
+     or jsonb_array_length(_items) = 0 then
+    raise exception 'Your cart is empty.' using errcode = 'P0001';
+  end if;
+  if jsonb_array_length(_items) > 30 then
+    raise exception 'Too many items in a single order.' using errcode = 'P0001';
+  end if;
+
+  v_name := trim(coalesce(_customer_name, ''));
+  if length(v_name) < 2 or length(v_name) > 120 then
+    raise exception 'Please provide your name (2–120 characters).' using errcode = 'P0001';
+  end if;
+
+  v_phone := trim(coalesce(_customer_phone, ''));
+  if v_phone !~ '^(\+?88)?01[3-9][0-9]{8}$' then
+    raise exception 'Please provide a valid Bangladeshi mobile number.' using errcode = 'P0001';
+  end if;
+
+  v_email := trim(coalesce(_customer_email, ''));
+  if length(v_email) > 254 or v_email !~* '^[^@\s]+@[^@\s]+\.[^@\s]{2,}$' then
+    raise exception 'Please provide a valid email address.' using errcode = 'P0001';
+  end if;
+
+  v_note := nullif(trim(coalesce(_customer_note, '')), '');
+  if v_note is not null and length(v_note) > 500 then
+    raise exception 'Order note is too long (maximum 500 characters).' using errcode = 'P0001';
+  end if;
+
+  if not exists (
+    select 1 from public.payment_methods
+     where method = _payment_method and is_active = true
+  ) then
+    raise exception 'This payment method is currently unavailable.' using errcode = 'P0001';
+  end if;
+
+  v_code := nullif(upper(trim(coalesce(_coupon_code, ''))), '');
+  if v_code is not null and length(v_code) > 64 then
+    raise exception 'Coupon code is too long.' using errcode = 'P0001';
+  end if;
+
+  for v_item in select value from jsonb_array_elements(_items)
+  loop
+    if jsonb_typeof(v_item) <> 'object' then
+      raise exception 'Invalid cart item.' using errcode = 'P0001';
+    end if;
+
+    v_product_id := coalesce(v_item ->> 'product_id', '');
+    if v_product_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then
+      raise exception 'A cart item has an invalid product.' using errcode = 'P0001';
+    end if;
+
+    v_qty_text := coalesce(v_item ->> 'quantity', '1');
+    if v_qty_text !~ '^[0-9]{1,2}$' then
+      raise exception 'Product quantity must be a whole number between 1 and 20.' using errcode = 'P0001';
+    end if;
+    v_qty := v_qty_text::int;
+    if v_qty < 1 or v_qty > 20 then
+      raise exception 'Product quantity must be between 1 and 20.' using errcode = 'P0001';
+    end if;
+
+    select * into v_product
+      from public.products
+     where id = v_product_id::uuid
+       and is_active = true;
+
+    if not found then
+      raise exception 'A product in your cart is no longer available.' using errcode = 'P0001';
+    end if;
+    if v_product.availability = 'out_of_stock' then
+      raise exception '% is currently out of stock.', v_product.name using errcode = 'P0001';
+    end if;
+
+    v_subtotal := v_subtotal + (v_product.discounted_price * v_qty);
+    v_lines := v_lines + 1;
+  end loop;
+
+  if v_code is not null then
+    select id into v_coupon_id
+      from public.coupons
+     where lower(code) = lower(v_code)
+     for update;
+
+    v_coupon := public.validate_coupon(v_code, v_subtotal);
+    if coalesce((v_coupon ->> 'valid')::boolean, false) then
+      v_discount := (v_coupon ->> 'discount')::numeric;
+      v_coupon_applied := true;
+    else
+      raise exception '%', (v_coupon ->> 'message') using errcode = 'P0001';
+    end if;
+  end if;
+
+  v_total := greatest(0, v_subtotal - v_discount);
+
+  insert into public.orders (
+    user_id, customer_name, customer_email, customer_phone, customer_note,
+    subtotal, discount, total, coupon_code, payment_method, status
+  ) values (
+    auth.uid(), v_name, v_email, v_phone, v_note,
+    v_subtotal, v_discount, v_total, v_code, _payment_method, 'pending_payment'
+  )
+  returning id, order_number, access_token into v_order_id, v_order_no, v_token;
+
+  for v_item in select value from jsonb_array_elements(_items)
+  loop
+    v_product_id := v_item ->> 'product_id';
+    v_qty := coalesce((v_item ->> 'quantity')::int, 1);
+    select * into v_product from public.products where id = v_product_id::uuid;
+
+    insert into public.order_items (
+      order_id, product_id, product_name, product_image, duration,
+      unit_price, quantity, line_total
+    ) values (
+      v_order_id, v_product.id, v_product.name, v_product.image_url, v_product.duration,
+      v_product.discounted_price, v_qty, v_product.discounted_price * v_qty
+    );
+  end loop;
+
+  insert into public.payments (order_id, method, amount, status)
+  values (v_order_id, _payment_method, v_total, 'pending');
+
+  if v_coupon_applied and v_coupon_id is not null then
+    update public.coupons
+       set used_count = used_count + 1
+     where id = v_coupon_id;
+  end if;
+
+  return jsonb_build_object(
+    'order_id', v_order_id,
+    'order_number', v_order_no,
+    'access_token', v_token,
+    'subtotal', v_subtotal,
+    'discount', v_discount,
+    'total', v_total,
+    'items', v_lines
+  );
+end;
+$function$;
+
+
+-- ===========================================================================
+-- >>> 20261122110500_lock_product_rows_during_checkout.sql
+-- ===========================================================================
+-- Hold a shared lock on each priced product row until checkout commits.
+-- This prevents a concurrent price/availability edit from making the saved order
+-- line totals differ from the subtotal computed earlier in place_order.
+do $migration$
+declare
+  v_definition text;
+begin
+  select pg_get_functiondef('public.place_order(jsonb,text,text,text,public.payment_method,text,text)'::regprocedure)
+    into v_definition;
+
+  if position('and is_active = true for share' in v_definition) = 0 then
+    v_definition := replace(
+      v_definition,
+      'and is_active = true;',
+      'and is_active = true for share;'
+    );
+    execute v_definition;
+  end if;
+end;
+$migration$;
