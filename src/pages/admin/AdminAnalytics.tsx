@@ -26,7 +26,7 @@ function exportAnalytics(data: AnalyticsData) {
   link.href = url
   link.download = `nexora-analytics-${new Date().toISOString().slice(0, 10)}.csv`
   link.click()
-  URL.revokeObjectURL(url)
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 export default function AdminAnalytics() {
