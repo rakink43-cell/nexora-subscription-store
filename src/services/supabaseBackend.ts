@@ -618,7 +618,7 @@ export const admin = {
   },
 
   async setBlocked(userId: string, blocked: boolean) {
-    const { error } = await sb().from('profiles').update({ is_blocked: blocked }).eq('id', userId)
+    const { error } = await sb().rpc('admin_set_customer_blocked', { _user_id: userId, _blocked: blocked })
     if (error) fail(error)
   },
 
