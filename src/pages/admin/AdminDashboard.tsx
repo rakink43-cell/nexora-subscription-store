@@ -11,6 +11,8 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  Eye,
+  UserPlus,
 } from 'lucide-react'
 import { api } from '../../lib/api'
 import { AdminCard, AdminHeader, AdminTable, SalesChart, StatTile } from '../../components/admin/AdminUI'
@@ -102,6 +104,21 @@ export default function AdminDashboard() {
           label="Customers"
           value={String(stats?.total_customers ?? 0)}
           icon={<Users className="h-4 w-4" />}
+          loading={loading}
+        />
+        <StatTile
+          label="Total page views"
+          value={String(stats?.total_page_views ?? 0)}
+          icon={<Eye className="h-4 w-4" />}
+          hint={`Today: ${stats?.page_views_today ?? 0}`}
+          loading={loading}
+        />
+        <StatTile
+          label="Signups today"
+          value={String(stats?.signups_today ?? 0)}
+          icon={<UserPlus className="h-4 w-4" />}
+          hint="New customer accounts today"
+          accent="violet"
           loading={loading}
         />
         <StatTile
