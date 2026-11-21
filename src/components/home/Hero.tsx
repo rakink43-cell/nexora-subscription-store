@@ -15,6 +15,10 @@ export function Hero() {
   const site = settings.site
   const [slideIndex, setSlideIndex] = useState(0)
   const active = slides[slideIndex]
+  const headline = site.hero_headline || active.title
+  const accentText = site.hero_headline ? headline.split(' ').slice(-2).join(' ') : active.accent
+  const accentStart = headline.lastIndexOf(accentText)
+  const headlineLead = accentStart >= 0 ? headline.slice(0, accentStart) : headline
   useEffect(() => {
     const timer = window.setInterval(() => setSlideIndex((index) => (index + 1) % slides.length), 5800)
     return () => window.clearInterval(timer)
@@ -44,7 +48,7 @@ export function Hero() {
           <div className="nx-reference-copy" key={slideIndex}>
             <span className="nx-reference-eyebrow"><Sparkles className="h-3.5 w-3.5" /> NEXORA GAMEVERSE</span>
             <h1 className="nx-reference-title">
-              {site.hero_headline || active.title}
+              {headlineLead}<span>{accentStart >= 0 ? accentText : ''}</span>
             </h1>
             <p className="nx-reference-subtitle">{site.hero_subtitle || active.description}</p>
             <div className="mt-7 flex flex-wrap gap-3">
