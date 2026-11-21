@@ -2979,3 +2979,214 @@ begin
   return v;
 end;
 $function$;
+
+
+-- ===========================================================================
+-- >>> 20261122114500_restrict_payment_proof_uploads_to_active_orders.sql
+-- ===========================================================================
+-- Guest checkout still needs to upload payment evidence before submitting payment.
+-- Restrict the public insert policy to a valid, existing pending order and bounded file metadata.
+drop policy if exists "payment proofs: anyone upload" on storage.objects;
+
+create policy "payment proofs: bounded order upload"
+on storage.objects
+for insert
+to anon, authenticated
+with check (
+  bucket_id = 'payment-proofs'
+  and name ~ '^NX-[0-9]{6}-[0-9]{5}/[0-9]{13}\.(jpg|jpeg|png|webp|pdf)$'
+  and coalesce((metadata->>'size')::bigint, 0) between 1 and 5242880
+  and metadata->>'mimetype' in ('image/jpeg','image/png','image/webp','application/pdf')
+  and exists (
+    select 1
+      from public.orders o
+     where o.order_number = split_part(name, '/', 1)
+       and o.status in ('pending_payment','payment_submitted')
+       and (
+         o.user_id is null
+         or o.user_id = auth.uid()
+         or public.is_admin()
+       )
+  )
+);
+
+
+-- ===========================================================================
+-- >>> 20261122120000_account_based_new_customer_offer.sql
+-- ===========================================================================
+-- NEXORA: account-based first-three-order offer, enforced in trusted checkout.
+alter table public.products
+  add column if not exists new_user_offer_enabled boolean not null default false;
+
+create or replace view public.public_products as
+select
+  id, category_id, name, slug, brand, short_description, description,
+  image_url, gallery, duration, original_price, discounted_price,
+  delivery_info, delivery_time, availability, is_featured, is_active,
+  badge, rating, rating_count, sales_count, sort_order, created_at,
+  updated_at, new_user_offer_enabled
+from public.products;
+
+do $migration$
+declare
+  v_definition text;
+  v_original text;
+begin
+  v_definition := pg_get_functiondef(
+    'public.place_order(jsonb,text,text,text,public.payment_method,text,text)'::regprocedure
+  );
+  v_original := v_definition;
+
+  v_definition := replace(
+    v_definition,
+    '  v_qty_text text;',
+    '  v_qty_text text;
+  v_user_order_count int := 0;
+  v_offer_active boolean := false;
+  v_offer_applied boolean := false;
+  v_effective_price numeric;'
+  );
+
+  v_definition := replace(
+    v_definition,
+    'begin
+  if _items is null or jsonb_typeof(_items) <> ''array''',
+    'begin
+  -- Serialize checkout attempts for this account so simultaneous requests
+  -- cannot all see the same first-three-order count.
+  if auth.uid() is not null then
+    perform pg_advisory_xact_lock(hashtextextended(auth.uid()::text, 0));
+    select count(*)::int into v_user_order_count
+      from public.orders
+     where user_id = auth.uid()
+       and status not in (''cancelled'', ''refunded'');
+    v_offer_active := v_user_order_count < 3;
+  end if;
+
+  if _items is null or jsonb_typeof(_items) <> ''array'''
+  );
+
+  v_definition := replace(
+    v_definition,
+    '    v_subtotal := v_subtotal + (v_product.discounted_price * v_qty);',
+    '    v_effective_price := v_product.discounted_price;
+    if v_offer_active and v_product.new_user_offer_enabled then
+      v_effective_price := round(v_product.discounted_price * 0.10, 2);
+      v_offer_applied := true;
+    end if;
+    v_subtotal := v_subtotal + (v_effective_price * v_qty);'
+  );
+
+  v_definition := replace(
+    v_definition,
+    '      v_product.discounted_price, v_qty, v_product.discounted_price * v_qty',
+    '      case
+        when v_offer_active and v_product.new_user_offer_enabled
+          then round(v_product.discounted_price * 0.10, 2)
+        else v_product.discounted_price
+      end,
+      v_qty,
+      (case
+        when v_offer_active and v_product.new_user_offer_enabled
+          then round(v_product.discounted_price * 0.10, 2)
+        else v_product.discounted_price
+      end) * v_qty'
+  );
+
+  v_definition := replace(
+    v_definition,
+    '    ''items'', v_lines',
+    '    ''items'', v_lines,
+    ''new_customer_offer_applied'', v_offer_applied,
+    ''new_customer_offer_orders_used'', v_user_order_count + 1'
+  );
+
+  if v_definition = v_original
+     or position('v_offer_active boolean' in v_definition) = 0
+     or position('new_customer_offer_applied' in v_definition) = 0
+     or position('round(v_product.discounted_price * 0.10, 2)' in v_definition) = 0 then
+    raise exception 'Offer migration could not safely patch the current place_order definition; no RPC changes were applied.';
+  end if;
+
+  execute v_definition;
+end;
+$migration$;
+
+
+-- ===========================================================================
+-- >>> 20261122123000_offer_eligibility_status_rpc.sql
+-- ===========================================================================
+create or replace function public.get_new_customer_offer_status()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $function$
+declare
+  v_count int;
+begin
+  if auth.uid() is null then
+    raise exception 'Sign in to check your new-customer offer.' using errcode = '28000';
+  end if;
+
+  select count(*)::int into v_count
+    from public.orders
+   where user_id = auth.uid()
+     and status not in ('cancelled', 'refunded');
+
+  return jsonb_build_object(
+    'eligible', v_count < 3,
+    'orders_used', v_count,
+    'orders_remaining', greatest(0, 3 - v_count)
+  );
+end;
+$function$;
+
+revoke all on function public.get_new_customer_offer_status() from public;
+revoke all on function public.get_new_customer_offer_status() from anon;
+grant execute on function public.get_new_customer_offer_status() to authenticated;
+
+
+-- ===========================================================================
+-- >>> 20261122140000_restore_safe_profile_update_column_grants.sql
+-- ===========================================================================
+-- Restore only the profile columns used by the customer profile editor and admin block toggle.
+-- RLS policies continue to restrict customers to their own row and admins to permitted rows.
+grant update (full_name, phone, address, city, is_blocked)
+  on table public.profiles to authenticated;
+
+
+-- ===========================================================================
+-- >>> 20261122143000_admin_only_customer_block_toggle.sql
+-- ===========================================================================
+-- Keep customer-editable fields separate from the admin-only block flag.
+revoke update (is_blocked) on table public.profiles from authenticated;
+grant update (full_name, phone, address, city)
+  on table public.profiles to authenticated;
+
+create or replace function public.admin_set_customer_blocked(_user_id uuid, _blocked boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required' using errcode = '28000';
+  end if;
+  if not public.is_admin() then
+    raise exception 'Administrator access required' using errcode = '42501';
+  end if;
+  update public.profiles
+     set is_blocked = _blocked,
+         updated_at = now()
+   where id = _user_id;
+  if not found then
+    raise exception 'Customer profile not found' using errcode = 'P0002';
+  end if;
+end;
+$$;
+
+revoke all on function public.admin_set_customer_blocked(uuid, boolean) from public;
+revoke all on function public.admin_set_customer_blocked(uuid, boolean) from anon;
+grant execute on function public.admin_set_customer_blocked(uuid, boolean) to authenticated;
