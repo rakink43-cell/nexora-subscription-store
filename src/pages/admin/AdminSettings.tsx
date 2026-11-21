@@ -52,10 +52,19 @@ export default function AdminSettings() {
   }
 
   const saveMethod = async (method: PaymentMethodConfig) => {
+    const methodKey = method.method_key.trim()
+    if (!method.display_name.trim() || !/^[a-z0-9][a-z0-9_-]{1,63}$/.test(methodKey)) {
+      setError('Enter a display name and a valid unique key (2–64 lowercase letters, numbers, hyphens or underscores).')
+      return
+    }
+    if (methods.some((item) => item.id !== method.id && item.method_key.toLowerCase() === methodKey.toLowerCase())) {
+      setError('This payment method key is already in use. Choose a different key.')
+      return
+    }
     setSaving(true)
     setError(null)
     try {
-      await api.admin.savePaymentMethod(method)
+      await api.admin.savePaymentMethod({ ...method, method_key: methodKey, display_name: method.display_name.trim() })
       toast.success('Payment method updated', method.display_name)
       await reload()
     } catch (err) {
@@ -336,7 +345,11 @@ export default function AdminSettings() {
               <Button loading={saving} icon={<Plus className="h-4 w-4" />} onClick={() => {
                 const method_key = newMethod.method_key.trim()
                 if (!newMethod.display_name.trim() || !/^[a-z0-9][a-z0-9_-]{1,63}$/.test(method_key)) {
-                  setError('Enter a display name and a unique key (at least 2 characters).')
+                  setError('Enter a display name and a valid key (2–64 lowercase letters, numbers, hyphens or underscores).')
+                  return
+                }
+                if (methods.some((item) => item.method_key.toLowerCase() === method_key.toLowerCase())) {
+                  setError('This payment method key is already in use. Choose a different key.')
                   return
                 }
                 setSaving(true)
