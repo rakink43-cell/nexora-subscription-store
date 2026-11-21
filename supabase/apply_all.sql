@@ -3190,3 +3190,302 @@ $$;
 revoke all on function public.admin_set_customer_blocked(uuid, boolean) from public;
 revoke all on function public.admin_set_customer_blocked(uuid, boolean) from anon;
 grant execute on function public.admin_set_customer_blocked(uuid, boolean) to authenticated;
+
+
+-- ===========================================================================
+-- >>> 20261122150000_harden_public_product_view_and_table_grants.sql
+-- ===========================================================================
+-- Keep public product browsing, but ensure the view applies the caller's RLS.
+ALTER VIEW public.public_products SET (security_invoker = true);
+
+-- Remove broad table privileges. RLS remains responsible for row-level admin writes.
+REVOKE ALL PRIVILEGES ON TABLE public.products FROM anon;
+REVOKE ALL PRIVILEGES ON TABLE public.products FROM authenticated;
+
+GRANT SELECT ON TABLE public.products TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.products TO authenticated;
+
+
+-- ===========================================================================
+-- >>> 20261122151000_split_public_and_admin_product_read_policies.sql
+-- ===========================================================================
+DROP POLICY IF EXISTS "products: public read" ON public.products;
+
+CREATE POLICY "products: public active read"
+ON public.products
+FOR SELECT
+TO anon, authenticated
+USING (is_active);
+
+CREATE POLICY "products: admin read all"
+ON public.products
+FOR SELECT
+TO authenticated
+USING (public.is_admin());
+
+
+-- ===========================================================================
+-- >>> 20261122152000_prevent_self_or_staff_blocking_from_customer_manager.sql
+-- ===========================================================================
+CREATE OR REPLACE FUNCTION public.admin_set_customer_blocked(_user_id uuid, _blocked boolean)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $function$
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication required' using errcode = '28000';
+  end if;
+
+  if not public.is_admin() then
+    raise exception 'Administrator access required' using errcode = '42501';
+  end if;
+
+  if _user_id = auth.uid() then
+    raise exception 'You cannot block or unblock your own account here.' using errcode = '42501';
+  end if;
+
+  if exists (
+    select 1
+      from public.user_roles
+     where user_id = _user_id
+       and role in ('admin', 'staff')
+  ) then
+    raise exception 'Administrator and staff accounts cannot be blocked through customer management.' using errcode = '42501';
+  end if;
+
+  update public.profiles
+     set is_blocked = _blocked,
+         updated_at = now()
+   where id = _user_id;
+
+  if not found then
+    raise exception 'Customer profile not found' using errcode = 'P0002';
+  end if;
+end;
+$function$;
+
+
+-- ===========================================================================
+-- >>> 20261122153000_enforce_blocked_customer_order_and_payment_activity.sql
+-- ===========================================================================
+CREATE OR REPLACE FUNCTION public.reject_blocked_customer_activity()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_user_id uuid;
+  v_email text;
+begin
+  -- Admins may continue to process or correct customer orders and payments.
+  if auth.uid() is not null and public.is_admin() then
+    return new;
+  end if;
+
+  if tg_table_name = 'orders' then
+    v_user_id := new.user_id;
+    v_email := new.customer_email;
+  else
+    select o.user_id, o.customer_email
+      into v_user_id, v_email
+      from public.orders o
+     where o.id = new.order_id;
+  end if;
+
+  if v_user_id is not null and exists (
+    select 1 from public.profiles p
+     where p.id = v_user_id and p.is_blocked
+  ) then
+    raise exception 'This account is blocked from customer order activity.' using errcode = '42501';
+  end if;
+
+  if v_email is not null and exists (
+    select 1 from public.profiles p
+     where lower(trim(p.email)) = lower(trim(v_email))
+       and p.is_blocked
+  ) then
+    raise exception 'This email belongs to a blocked customer account.' using errcode = '42501';
+  end if;
+
+  return new;
+end;
+$function$;
+
+REVOKE ALL ON FUNCTION public.reject_blocked_customer_activity() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS reject_blocked_customer_orders ON public.orders;
+CREATE TRIGGER reject_blocked_customer_orders
+BEFORE INSERT OR UPDATE OF user_id, customer_email
+ON public.orders
+FOR EACH ROW
+EXECUTE FUNCTION public.reject_blocked_customer_activity();
+
+DROP TRIGGER IF EXISTS reject_blocked_customer_payments ON public.payments;
+CREATE TRIGGER reject_blocked_customer_payments
+BEFORE INSERT OR UPDATE OF order_id, method, transaction_id, status
+ON public.payments
+FOR EACH ROW
+EXECUTE FUNCTION public.reject_blocked_customer_activity();
+
+
+-- ===========================================================================
+-- >>> 20261122154000_deny_blocked_accounts_customer_data_and_guest_order_access.sql
+-- ===========================================================================
+CREATE OR REPLACE FUNCTION public.is_customer_blocked()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $function$
+  SELECT coalesce((
+    SELECT p.is_blocked
+      FROM public.profiles p
+     WHERE p.id = auth.uid()
+  ), false);
+$function$;
+
+REVOKE ALL ON FUNCTION public.is_customer_blocked() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_customer_blocked() TO authenticated;
+
+DROP POLICY IF EXISTS "orders: read own" ON public.orders;
+CREATE POLICY "orders: read own" ON public.orders
+FOR SELECT TO authenticated
+USING (user_id = (SELECT auth.uid()) AND NOT public.is_customer_blocked());
+
+DROP POLICY IF EXISTS "order_items: read own" ON public.order_items;
+CREATE POLICY "order_items: read own" ON public.order_items
+FOR SELECT TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.orders o
+    WHERE o.id = order_items.order_id
+      AND o.user_id = (SELECT auth.uid())
+  )
+  AND NOT public.is_customer_blocked()
+);
+
+DROP POLICY IF EXISTS "history: read own" ON public.order_status_history;
+CREATE POLICY "history: read own" ON public.order_status_history
+FOR SELECT TO authenticated
+USING (
+  NOT is_internal
+  AND EXISTS (
+    SELECT 1 FROM public.orders o
+    WHERE o.id = order_status_history.order_id
+      AND o.user_id = (SELECT auth.uid())
+  )
+  AND NOT public.is_customer_blocked()
+);
+
+DROP POLICY IF EXISTS "payments: read own" ON public.payments;
+CREATE POLICY "payments: read own" ON public.payments
+FOR SELECT TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.orders o
+    WHERE o.id = payments.order_id
+      AND o.user_id = (SELECT auth.uid())
+  )
+  AND NOT public.is_customer_blocked()
+);
+
+DROP POLICY IF EXISTS "profiles: read own" ON public.profiles;
+CREATE POLICY "profiles: read own" ON public.profiles
+FOR SELECT TO authenticated
+USING (id = (SELECT auth.uid()) AND NOT public.is_customer_blocked());
+
+DROP POLICY IF EXISTS "profiles: update own" ON public.profiles;
+CREATE POLICY "profiles: update own" ON public.profiles
+FOR UPDATE TO authenticated
+USING (id = (SELECT auth.uid()) AND NOT public.is_customer_blocked())
+WITH CHECK (id = (SELECT auth.uid()) AND NOT public.is_customer_blocked());
+
+DROP POLICY IF EXISTS "reviews: insert own" ON public.reviews;
+CREATE POLICY "reviews: insert own" ON public.reviews
+FOR INSERT TO authenticated
+WITH CHECK (
+  user_id = (SELECT auth.uid())
+  AND is_approved = false
+  AND NOT public.is_customer_blocked()
+);
+
+DROP POLICY IF EXISTS "support: read own" ON public.support_messages;
+CREATE POLICY "support: read own" ON public.support_messages
+FOR SELECT TO authenticated
+USING (user_id = (SELECT auth.uid()) AND NOT public.is_customer_blocked());
+
+DROP POLICY IF EXISTS "roles: read own" ON public.user_roles;
+CREATE POLICY "roles: read own" ON public.user_roles
+FOR SELECT TO authenticated
+USING (
+  (user_id = (SELECT auth.uid()) OR public.is_admin())
+  AND NOT public.is_customer_blocked()
+);
+
+CREATE OR REPLACE FUNCTION public.get_order(_order_number text, _access_token uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
+AS $function$
+declare
+  v_order public.orders;
+  v_items jsonb;
+  v_payment jsonb;
+  v_history jsonb;
+begin
+  select * into v_order
+    from public.orders
+   where order_number = upper(trim(_order_number));
+
+  if not found then
+    raise exception 'Order not found.' using errcode = 'P0001';
+  end if;
+
+  if not (
+    public.is_admin()
+    or (v_order.user_id is not null and v_order.user_id = auth.uid())
+    or (v_order.user_id is null and v_order.access_token = _access_token)
+  ) then
+    raise exception 'Order not found.' using errcode = '42501';
+  end if;
+
+  if not public.is_admin() and (
+    (v_order.user_id is not null and exists (
+      select 1 from public.profiles p
+      where p.id = v_order.user_id and p.is_blocked
+    ))
+    or (v_order.user_id is null and exists (
+      select 1 from public.profiles p
+      where lower(trim(p.email)) = lower(trim(v_order.customer_email))
+        and p.is_blocked
+    ))
+  ) then
+    raise exception 'Order not found.' using errcode = 'P0001';
+  end if;
+
+  select coalesce(jsonb_agg(to_jsonb(i) order by i.created_at), '[]'::jsonb)
+    into v_items from public.order_items i where i.order_id = v_order.id;
+
+  select to_jsonb(p) - 'admin_note' into v_payment
+    from public.payments p where p.order_id = v_order.id
+    order by p.created_at desc limit 1;
+
+  select coalesce(jsonb_agg(jsonb_build_object('status', h.status, 'note', h.note, 'created_at', h.created_at)
+                            order by h.created_at), '[]'::jsonb)
+    into v_history from public.order_status_history h
+   where h.order_id = v_order.id and h.is_internal = false;
+
+  return jsonb_build_object(
+    'order', (to_jsonb(v_order) - 'access_token'),
+    'items', v_items,
+    'payment', v_payment,
+    'history', v_history
+  );
+end;
+$function$;
