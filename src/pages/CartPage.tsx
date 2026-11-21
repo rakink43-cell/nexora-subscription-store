@@ -33,7 +33,7 @@ export default function CartPage() {
   const savings = originalTotal - subtotal
 
   return (
-    <div className="nx-container py-8">
+    <div className="nx-container nx-game-cart py-8">
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">Shopping Cart</h1>
@@ -53,7 +53,7 @@ export default function CartPage() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-2.5">
           {lines.map((line) => (
-            <div key={line.productId} className="nx-card flex gap-3 p-3">
+            <div key={line.productId} className="nx-card nx-game-cart-line flex gap-3 p-3">
               <Link to={`/product/${line.slug}`} className="shrink-0">
                 <ProductMedia
                   name={line.name}
@@ -138,7 +138,7 @@ export default function CartPage() {
 
         {/* summary */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="nx-card p-5">
+          <div className="nx-card nx-game-cart-summary p-5">
             <h2 className="font-display text-base font-bold text-white">Order summary</h2>
 
             <dl className="mt-4 space-y-2.5 text-[13px]">
