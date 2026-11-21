@@ -47,6 +47,10 @@ export default function OrderDetailPage() {
 
   useEffect(() => { load() }, [load])
 
+  useEffect(() => {
+    if (detail?.order.payment_method) setMethod(detail.order.payment_method)
+  }, [detail?.order.payment_method])
+
   if (loading) {
     return (
       <div className="grid min-h-[40vh] place-items-center">
