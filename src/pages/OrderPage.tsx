@@ -42,7 +42,7 @@ import {
   formatDateTime,
   isTrxId,
 } from '../lib/utils'
-import type { OrderDetail, PaymentMethod } from '../types'
+import type { OrderDetail, PaymentMethod, PaymentMethodConfig } from '../types'
 
 export default function OrderPage() {
   const { orderNumber = '' } = useParams<{ orderNumber: string }>()
@@ -116,7 +116,6 @@ export default function OrderPage() {
   const { order, items, payment, history } = detail
   const meta = ORDER_STATUS_META[order.status]
   const needsPayment = order.status === 'pending_payment'
-  const methodConfig = paymentMethods.find((m) => m.method === order.payment_method)
 
   return (
     <div className="nx-container py-8">
@@ -173,7 +172,7 @@ export default function OrderPage() {
               order={order}
               orderNumber={order.order_number}
               token={token}
-              methodConfig={methodConfig}
+              paymentMethods={paymentMethods}
               onSubmitted={() => load(true)}
               toast={toast}
             />
@@ -367,29 +366,19 @@ function PaymentPanel({
   order,
   orderNumber,
   token,
-  methodConfig,
+  paymentMethods,
   onSubmitted,
   toast,
 }: {
   order: OrderDetail['order']
   orderNumber: string
   token: string | null
-  methodConfig: ReturnType<typeof Object> | undefined
+  paymentMethods: PaymentMethodConfig[]
   onSubmitted: () => void
   toast: ReturnType<typeof Object>
 }) {
-  const config = methodConfig as
-    | {
-        account_number: string
-        account_name: string | null
-        bank_name: string | null
-        branch: string | null
-        routing_number: string | null
-        instructions: string | null
-        display_name: string
-      }
-    | undefined
-
+  const activeMethods = paymentMethods.filter((item) => item.is_active && item.payment_type === 'manual')
+  const config = activeMethods.find((item) => item.method === method)
   const [method, setMethod] = useState<PaymentMethod>(order.payment_method)
   const [trxId, setTrxId] = useState('')
   const [sender, setSender] = useState('')
@@ -495,9 +484,9 @@ function PaymentPanel({
               onChange={(e) => setMethod(e.target.value as PaymentMethod)}
               className="text-[13px]"
             >
-              {(['bkash', 'nagad', 'bank_transfer'] as PaymentMethod[]).map((m) => (
-                <option key={m} value={m} className="bg-[#0B111D]">
-                  {PAYMENT_METHOD_META[m].label}
+              {(activeMethods.length ? activeMethods : (['bkash', 'nagad', 'bank_transfer'] as PaymentMethod[]).map((m) => ({ method: m, display_name: PAYMENT_METHOD_META[m].label }))).map((m) => (
+                <option key={m.method} value={m.method} className="bg-[#0B111D]">
+                  {'display_name' in m ? m.display_name : m.method}
                 </option>
               ))}
             </Select>
