@@ -486,7 +486,7 @@ function PaymentPanel({
             >
               {(activeMethods.length ? activeMethods : (['bkash', 'nagad', 'bank_transfer'] as PaymentMethod[]).map((m) => ({ method: m, display_name: PAYMENT_METHOD_META[m].label }))).map((m) => (
                 <option key={m.method} value={m.method} className="bg-[#0B111D]">
-                  {'display_name' in m ? m.display_name : m.method}
+                  m.display_name
                 </option>
               ))}
             </Select>
