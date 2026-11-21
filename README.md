@@ -1,32 +1,93 @@
-# React + TypeScript + Vite
+# NEXORA — Digital Subscription Store
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+NEXORA is a digital subscription storefront built with React, TypeScript, Vite, Supabase
+(Auth, PostgreSQL and private Storage), and Cloudflare Pages.
 
-Currently, two official plugins are available:
+## Production
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Storefront: https://nexora-subscription-store.pages.dev
+- Hosting: Cloudflare Pages using the free `pages.dev` subdomain
+- Database/Auth project ref: `vxorwxecyfhuzzgtyowy`
 
-## React Compiler
+The live database is initialized and the current migration history is applied. The existing
+administrator account already has its admin role; this repository does not provide public
+admin registration.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Main capabilities
 
-## Expanding the Oxlint configuration
+- Product catalogue, categories, product details, cart and checkout
+- Guest checkout and account-based customer orders
+- New-customer offers and coupon validation performed server-side
+- Manual payment submission for configured payment methods
+- Private payment proof uploads and short-lived signed previews
+- Admin product/content/settings/payment-method management
+- Customer and order management, payment verification and status workflow
+- Analytics for visits and signups
+- RLS-protected customer data and admin-only RPC operations
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+Payment is manually verified by an administrator; this project does not claim an automated
+payment gateway integration.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## Tech stack
+
+- React 19, TypeScript, Vite
+- Supabase JS client, PostgreSQL, Row Level Security and Storage
+- Cloudflare Pages
+- Playwright for browser tests
+
+## Local development
+
+```bash
+npm ci
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Create a local `.env` from `.env.example` and configure only the Supabase publishable
+key and project URL. Never put a service-role or secret key in frontend environment variables.
+
+For a demo backend:
+
+```bash
+npm run dev:demo
+```
+
+## Database setup
+
+The repository contains 44 ordered migrations in `supabase/migrations/`.
+
+For a fresh development/test project:
+
+```bash
+supabase link --project-ref YOUR_PROJECT_REF
+supabase db push
+```
+
+A full SQL bundle is available at `supabase/apply_all.sql` for a brand-new disposable
+database. It contains all 44 migrations; run it once only. **Do not run it against the
+existing production project.**
+
+See [docs/SETUP.md](docs/SETUP.md) for current production operations and
+[docs/TESTING.md](docs/TESTING.md) for verification limits and test commands.
+
+## Validation scripts
+
+```bash
+npm run typecheck
+npm run build
+npm run db:test
+npm run test:e2e
+npm run verify:supabase
+```
+
+`npm run db:test` recreates a local test database. Never point it at production.
+The full live payment lifecycle still needs a dedicated test customer/order in a safe
+test environment before it can be marked end-to-end verified.
+
+## Security notes
+
+- Customer data is protected by RLS.
+- Admin RPCs validate role internally.
+- Payment proof storage is private.
+- Product prices and coupon discounts are recalculated in PostgreSQL.
+- Keep email confirmation enabled for production and configure a verified SMTP sender if
+  Supabase's built-in mail service rate-limits confirmation emails.
