@@ -86,7 +86,7 @@ export default function AdminLayout() {
   const unread = notifications.filter((n) => !n.is_read).length
 
   return (
-    <div className="min-h-screen bg-[#05070C]">
+    <div className="nx-game-admin min-h-screen bg-[#05070C]">
       {/* top bar */}
       <header className="sticky top-0 z-40 border-b border-white/8 bg-[#05070C]/95 backdrop-blur">
         <div className="flex h-14 items-center gap-3 px-3 sm:px-5">
