@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run verify:migrations && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "verify:supabase": "node scripts/verify-connection.mjs",
@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "dev:demo": "vite --mode demo",
     "typecheck": "tsc -b --noEmit",
-    "test:demo": "playwright test --project=demo"
+    "test:demo": "playwright test --project=demo",
+    "verify:migrations": "node scripts/verify-migration-bundle.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.109.0",
