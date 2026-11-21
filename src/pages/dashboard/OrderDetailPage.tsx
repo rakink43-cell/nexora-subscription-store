@@ -158,7 +158,7 @@ export default function OrderDetailPage() {
                   <Select id="m" value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)} className="py-2 text-[12.5px]">
                     {(activeMethods.length ? activeMethods : [{ method, display_name: PAYMENT_METHOD_META[method]?.label ?? method }]).map((m) => (
                       <option key={m.method} value={m.method} className="bg-[#0B111D]">
-                        {'display_name' in m ? m.display_name : m.method}
+                        m.display_name
                       </option>
                     ))}
                   </Select>
