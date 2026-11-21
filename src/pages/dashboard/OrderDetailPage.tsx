@@ -93,7 +93,7 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <div>
+    <div className="nx-game-order-detail">
       <Link
         to="/dashboard/orders"
         className="mb-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-white/45 transition hover:text-white"
