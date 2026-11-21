@@ -2260,3 +2260,156 @@ begin
 
   raise notice 'NEXORA storage buckets and policies configured.';
 end $$;
+
+
+-- ===========================================================================
+-- >>> 0010_rpc_security_and_fk_indexes.sql
+-- ===========================================================================
+-- NEXORA 0010: Harden SECURITY DEFINER RPC grants and add missing FK indexes.
+-- This migration is idempotent and has already been applied to the connected project.
+
+do $$
+declare r record;
+begin
+  for r in
+    select p.oid::regprocedure as signature
+    from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public' and p.prosecdef
+  loop
+    execute format('revoke all on function %s from public, anon, authenticated', r.signature);
+  end loop;
+end $$;
+
+grant execute on function public.is_admin() to anon, authenticated;
+grant execute on function public.has_role(uuid, public.app_role) to anon, authenticated;
+grant execute on function public.can_access_order(public.orders) to anon, authenticated;
+grant execute on function public.is_super_admin() to authenticated;
+
+grant execute on function public.place_order(jsonb,text,text,text,public.payment_method,text,text) to anon, authenticated;
+grant execute on function public.submit_payment(text,uuid,public.payment_method,text,text,numeric,text) to anon, authenticated;
+grant execute on function public.get_order(text,uuid) to anon, authenticated;
+grant execute on function public.lookup_guest_order(text,text) to anon, authenticated;
+grant execute on function public.validate_coupon(text,numeric) to anon, authenticated;
+grant execute on function public.claim_guest_order(text,text) to authenticated;
+
+grant execute on function public.admin_dashboard_stats() to authenticated;
+grant execute on function public.admin_set_role(text,public.app_role) to authenticated;
+grant execute on function public.admin_update_order_status(uuid,public.order_status,text) to authenticated;
+grant execute on function public.admin_verify_payment(uuid,public.payment_status,text) to authenticated;
+grant execute on function public.bootstrap_admin(text,text) to authenticated;
+
+alter function public.set_updated_at() set search_path = public, pg_temp;
+alter function public.generate_order_number() set search_path = public, pg_temp;
+
+create index if not exists idx_admin_audit_actor on public.admin_audit_log(actor_id);
+create index if not exists idx_notifications_order on public.notifications(order_id);
+create index if not exists idx_order_history_changed_by on public.order_status_history(changed_by);
+create index if not exists idx_payments_verified_by on public.payments(verified_by);
+create index if not exists idx_reviews_user on public.reviews(user_id);
+create index if not exists idx_support_replied_by on public.support_messages(replied_by);
+create index if not exists idx_support_user on public.support_messages(user_id);
+create index if not exists idx_user_roles_granted_by on public.user_roles(granted_by);
+
+
+-- ===========================================================================
+-- >>> 0011_dynamic_payment_methods.sql
+-- ===========================================================================
+-- Dynamic payment method management for NEXORA.
+-- Existing admin-write and public-active-read RLS policies remain in force.
+alter table public.payment_methods alter column method type text using method::text;
+alter table public.payment_methods
+  add column if not exists method_key text,
+  add column if not exists payment_type text not null default 'manual',
+  add column if not exists extra_details jsonb not null default '{}'::jsonb,
+  add column if not exists requires_transaction_id boolean not null default true,
+  add column if not exists qr_image_url text;
+update public.payment_methods set method_key = coalesce(nullif(method_key, ''), method) where method_key is null or method_key = '';
+alter table public.payment_methods alter column method_key set not null;
+create unique index if not exists payment_methods_method_key_uidx on public.payment_methods (method_key);
+alter table public.payment_methods
+  add constraint payment_methods_method_key_format check (method_key ~ '^[a-z0-9][a-z0-9_-]{1,63}$'),
+  add constraint payment_methods_payment_type_check check (payment_type in ('manual', 'gateway'));
+alter table public.payments alter column method drop not null;
+alter table public.payments
+  add column if not exists payment_method_id uuid references public.payment_methods(id) on delete set null,
+  add column if not exists method_key text,
+  add column if not exists method_label text;
+create index if not exists payments_payment_method_id_idx on public.payments(payment_method_id);
+comment on column public.payment_methods.method_key is 'Admin-defined unique key for any custom payment method.';
+comment on column public.payment_methods.extra_details is 'Public structured details configured by admins, such as account holder, bank branch, routing number, and custom instructions.';
+comment on column public.payments.payment_method_id is 'Selected payment method record; nullable so historical payments survive method deletion.';
+comment on column public.payments.method_label is 'Snapshot of the customer-facing payment method name at checkout.';
+
+-- ===========================================================================
+-- >>> 0012_admin_username_auth.sql
+-- ===========================================================================
+-- NEXORA 0012: Single administrator username login and one-time password setup.
+-- This keeps the existing Supabase Auth user and admin role. No second admin account is created.
+
+create table if not exists public.admin_login_credentials (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  username text not null unique check (username = lower(username) and length(username) between 4 and 40),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.admin_password_setup_tokens (
+  token_hash text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.admin_login_credentials enable row level security;
+alter table public.admin_password_setup_tokens enable row level security;
+revoke all on public.admin_login_credentials from anon, authenticated;
+revoke all on public.admin_password_setup_tokens from anon, authenticated;
+grant all on public.admin_login_credentials to service_role;
+grant all on public.admin_password_setup_tokens to service_role;
+
+do $$
+declare
+  v_admin_count integer;
+  v_admin_id uuid;
+begin
+  select count(distinct user_id), min(user_id::text)::uuid
+    into v_admin_count, v_admin_id
+  from public.user_roles
+  where role = 'admin';
+
+  if v_admin_count <> 1 then
+    raise exception 'Expected exactly one existing NEXORA admin; found %', v_admin_count;
+  end if;
+
+  insert into public.admin_login_credentials(user_id, username)
+  values (v_admin_id, 'nexora_admin')
+  on conflict (user_id) do update set username = excluded.username;
+end $$;
+
+-- One-time bootstrap token. Only its SHA-256 hash is stored in the database.
+insert into public.admin_password_setup_tokens(token_hash, user_id, expires_at)
+select '408c41f4dda3d3a163865f7dec1952cc8a63f462d22a3f6d7b721b4acb7953e8',
+       c.user_id,
+       now() + interval '24 hours'
+from public.admin_login_credentials c
+where c.username = 'nexora_admin'
+on conflict (token_hash) do nothing;
+
+
+-- ===========================================================================
+-- >>> 0013_analytics_query_indexes.sql
+-- ===========================================================================
+-- NEXORA · 0013 — Analytics query indexes
+-- Keeps the 30-day analytics dashboard responsive as event/profile tables grow.
+create index if not exists idx_analytics_created_at
+  on public.analytics_events (created_at desc);
+
+create index if not exists idx_profiles_created_at
+  on public.profiles (created_at desc);
+
+
+-- ===========================================================================
+-- >>> 20261121180936_revoke_public_bootstrap_admin.sql
+-- ===========================================================================
+-- NEXORA live hardening: bootstrap_admin is not a public setup endpoint.
+revoke all on function public.bootstrap_admin(text, text) from public, anon, authenticated;
