@@ -22,9 +22,9 @@ function exportAnalytics(data: AnalyticsData) {
     return `"${safe.replace(/"/g, '""')}"`
   }
   const rows = [
-    ['Report', 'Date / Page', 'Page views', 'Signups', 'Count'],
+    ['Report type', 'Date / Page', 'Page views', 'Signups', 'Unique visitors'],
     ...data.daily.map((day) => ['Daily', day.day, day.views, day.signups, '']),
-    ...data.pages.map((page) => ['Top page', page.path, '', '', page.count]),
+    ...data.pages.map((page) => ['Top page', page.path, page.count, '', '']),
     ['Summary', 'Last 30 days', data.page_views, data.signups, data.visitors],
   ]
   const csv = rows.map((row) => row.map((value) => quote(value)).join(',')).join('\r\n')
