@@ -431,7 +431,7 @@ export default function CheckoutPage() {
             ) : user ? (
               <p className="mt-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-[11.5px] text-white/45">Your first 3 order offer has been used.</p>
             ) : (
-              <p className="mt-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-[11.5px] text-white/45">Sign in or create an account to check eligibility for the 90% offer on selected products during your first 3 orders.</p>
+              <p className="mt-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-[11.5px] text-white/45"><Link to="/login" className="font-semibold text-[#6EC1FF] hover:underline">Sign in</Link> or <Link to="/register" className="font-semibold text-[#6EC1FF] hover:underline">create an account</Link> to check eligibility for the 90% offer on selected products during your first 3 orders.</p>
             )}
 
             <ul className="mt-3.5 space-y-2.5">
