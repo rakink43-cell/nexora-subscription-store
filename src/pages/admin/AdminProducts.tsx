@@ -223,6 +223,14 @@ export default function AdminProducts() {
     const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim())
     if (lines.length < 2) { toast.error('CSV has no product rows.'); return }
     const headers = parseCsvRow(lines[0]).map((header) => header.trim().toLowerCase())
+    if (headers.some((header) => !header)) {
+      toast.error('CSV contains an empty column name. Nothing imported.')
+      return
+    }
+    if (new Set(headers).size !== headers.length) {
+      toast.error('CSV contains duplicate column names. Nothing imported.')
+      return
+    }
     const required = ['slug', 'original_price', 'discounted_price']
     if (!required.every((header) => headers.includes(header))) {
       toast.error('CSV must include slug, original_price and discounted_price columns.')
