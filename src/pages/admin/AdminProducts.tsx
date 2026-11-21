@@ -740,6 +740,13 @@ function ProductFormModal({
                   const files = Array.from(e.target.files ?? [])
                   e.target.value = ''
                   if (!files.length) return
+                  const current = (form.gallery ?? []).map((url) => url.trim()).filter(Boolean)
+                  // Check the maximum before uploading so rejected selections do not
+                  // create unnecessary files in storage.
+                  if (current.length + files.length > 20) {
+                    toast.error('Gallery limit reached', `You can keep up to 20 additional images. Currently ${current.length} image(s) are listed.`)
+                    return
+                  }
                   setUploading(true)
                   try {
                     const uploader = (api.admin as { uploadProductImage?: (f: File) => Promise<string> }).uploadProductImage
@@ -748,13 +755,16 @@ function ProductFormModal({
                     for (const file of files) await validateStoreImage(file)
                     const urls: string[] = []
                     for (const file of files) urls.push(await uploader(file))
-                    const current = form.gallery ?? []
+                    urls.forEach((url, index) => validateProductImageUrl(url, 'Uploaded gallery image ' + (index + 1)))
                     const existing = new Set(current)
                     const added = urls.filter((url) => {
                       if (existing.has(url)) return false
                       existing.add(url)
                       return true
                     })
+                    if (current.length + added.length > 20) {
+                      throw new Error('Gallery can contain up to 20 additional images. Remove an image before adding more.')
+                    }
                     set('gallery', [...current, ...added])
                     toast.success('Gallery images uploaded', `${added.length} unique image(s) added`)
                   } catch (err) {
