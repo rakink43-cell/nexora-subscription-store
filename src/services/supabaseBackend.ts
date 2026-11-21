@@ -473,12 +473,14 @@ export const admin = {
       return rows
     }
 
-    let events: { event_name: string; path: string | null; metadata: Record<string, unknown> | null; created_at: string }[]
-    let profiles: { id: string; created_at: string }[]
+    type EventRow = { event_name: string; path: string | null; metadata: Record<string, unknown> | null; created_at: string }
+    type ProfileRow = { id: string; created_at: string }
+    let events: EventRow[]
+    let profiles: ProfileRow[]
     try {
       ;[events, profiles] = await Promise.all([
-        fetchAll(sb().from('analytics_events').select('event_name,path,metadata,created_at').gte('created_at', since).order('created_at', { ascending: true })),
-        fetchAll(sb().from('profiles').select('id,created_at').gte('created_at', since).order('created_at', { ascending: true })),
+        fetchAll<EventRow>(sb().from('analytics_events').select('event_name,path,metadata,created_at').gte('created_at', since).order('created_at', { ascending: true })),
+        fetchAll<ProfileRow>(sb().from('profiles').select('id,created_at').gte('created_at', since).order('created_at', { ascending: true })),
       ])
     } catch (error) {
       fail(error, 'Could not load analytics.')
