@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Package, Search, ShoppingBag } from 'lucide-react'
 import { api } from '../../lib/api'
-import { Badge, ButtonLink, EmptyState, Input, Skeleton } from '../../components/ui'
+import { Badge, ButtonLink, EmptyState, ErrorNote, Input, Skeleton } from '../../components/ui'
 import { ORDER_STATUS_META, cn, formatBDT, formatDate } from '../../lib/utils'
 import type { Order, OrderStatus } from '../../types'
 
@@ -17,18 +17,20 @@ const FILTERS: { value: OrderStatus | 'all'; label: string }[] = [
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all')
   const [search, setSearch] = useState('')
 
   useEffect(() => {
     let active = true
+    setError(null)
     api.orders
       .mine()
       .then((rows) => {
         if (active) setOrders(rows)
       })
-      .catch(() => {
-        if (active) setOrders([])
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : 'Could not load your orders.')
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -68,6 +70,8 @@ export default function MyOrdersPage() {
         </div>
       </div>
 
+      {error && <ErrorNote message={error} className="mb-4" />}
+
       <div className="nx-scroll-x mb-4">
         {FILTERS.map((f) => (
           <button
@@ -100,9 +104,11 @@ export default function MyOrdersPage() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Package className="h-5 w-5" />}
-          title={orders.length === 0 ? 'No orders yet' : 'No matching orders'}
+          title={error ? 'Orders could not be loaded' : orders.length === 0 ? 'No orders yet' : 'No matching orders'}
           description={
-            orders.length === 0
+            error
+              ? 'Please refresh the page or try again in a moment.'
+              : orders.length === 0
               ? 'When you buy a subscription it appears here with live tracking.'
               : 'Try another filter or clear your search.'
           }
