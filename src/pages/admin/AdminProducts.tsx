@@ -208,21 +208,47 @@ export default function AdminProducts() {
     const updates = lines.slice(1).map((line) => parseCsvRow(line)).filter((cells) => cells.length === headers.length)
     const matched = updates.map((cells) => ({ cells, product: bySlug.get(cells[index('slug')].trim()) })).filter((row) => row.product)
     if (!matched.length) { toast.error('No matching product slugs found. Nothing imported.'); return }
+
+    // Validate every matched row before writing, avoiding silent skips and
+    // preventing malformed CSV from partially changing the catalogue.
+    const allowedAvailability: Product['availability'][] = ['in_stock', 'limited', 'out_of_stock']
+    const prepared = matched.map(({ cells, product }) => {
+      const original = Number(cells[index('original_price')])
+      const discounted = Number(cells[index('discounted_price')])
+      if (!Number.isFinite(original) || !Number.isFinite(discounted) || original < 0 || discounted < 0) {
+        throw new Error('CSV contains an invalid or negative price.')
+      }
+      if (discounted > original) throw new Error('Discounted price cannot exceed original price for slug: ' + product!.slug)
+      const availability = index('availability') >= 0 ? cells[index('availability')].trim() : undefined
+      if (availability !== undefined && !allowedAvailability.includes(availability as Product['availability'])) {
+        throw new Error('Invalid availability value for slug: ' + product!.slug)
+      }
+      const active = index('is_active') >= 0 ? cells[index('is_active')].trim().toLowerCase() : undefined
+      const featured = index('is_featured') >= 0 ? cells[index('is_featured')].trim().toLowerCase() : undefined
+      if (active !== undefined && !['true', 'false'].includes(active)) throw new Error('is_active must be true or false for slug: ' + product!.slug)
+      if (featured !== undefined && !['true', 'false'].includes(featured)) throw new Error('is_featured must be true or false for slug: ' + product!.slug)
+      return {
+        product: product!,
+        original,
+        discounted,
+        availability,
+        active,
+        featured,
+        brand: index('brand') >= 0 ? cells[index('brand')] : undefined,
+      }
+    })
     setBusy(true)
     let count = 0
     try {
-      for (const { cells, product } of matched) {
-        const original = Number(cells[index('original_price')])
-        const discounted = Number(cells[index('discounted_price')])
-        if (!Number.isFinite(original) || !Number.isFinite(discounted) || original < 0 || discounted < 0) continue
+      for (const row of prepared) {
         await api.admin.saveProduct({
-          ...product!,
-          original_price: original,
-          discounted_price: discounted,
-          ...(index('brand') >= 0 ? { brand: cells[index('brand')] || null } : {}),
-          ...(index('availability') >= 0 ? { availability: cells[index('availability')] as Product['availability'] } : {}),
-          ...(index('is_active') >= 0 ? { is_active: cells[index('is_active')].toLowerCase() === 'true' } : {}),
-          ...(index('is_featured') >= 0 ? { is_featured: cells[index('is_featured')].toLowerCase() === 'true' } : {}),
+          ...row.product,
+          original_price: row.original,
+          discounted_price: row.discounted,
+          ...(row.brand !== undefined ? { brand: row.brand || null } : {}),
+          ...(row.availability !== undefined ? { availability: row.availability as Product['availability'] } : {}),
+          ...(row.active !== undefined ? { is_active: row.active === 'true' } : {}),
+          ...(row.featured !== undefined ? { is_featured: row.featured === 'true' } : {}),
         })
         count++
       }
