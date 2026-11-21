@@ -439,20 +439,32 @@ select tests.expect_error(
   format('select public.get_order(%L, %L)', current_setting('nexora.test.guest_no'), gen_random_uuid()),
   'guest cannot read an order with a wrong access token');
 
--- guest can submit payment proof with the token
-do $$
+-- Guest payment proof references a private object path scoped to this order.
+do $
+declare
+  v_order_no text := current_setting('nexora.test.guest_no');
+  v_token uuid := current_setting('nexora.test.guest_token')::uuid;
 begin
+  perform tests.expect_error(
+    format('select public.submit_payment(%L, %L, %L::public.payment_method, %L, %L, null, %L)',
+      v_order_no, v_token, 'nagad', 'NGD99880', '01822222222',
+      'NX-000000-00000/1234567890123.png'),
+    'guest cannot attach another order payment proof');
+
   perform public.submit_payment(
-    current_setting('nexora.test.guest_no'),
-    current_setting('nexora.test.guest_token')::uuid,
-    'nagad'::public.payment_method, 'NGD99881', '01822222222', null, null);
+    v_order_no,
+    v_token,
+    'nagad'::public.payment_method,
+    'NGD99881',
+    '01822222222',
+    null,
+    v_order_no || '/1234567890123.png');
+
   -- anon cannot SELECT orders; assert on the RPC's own return value instead
   perform tests.assert(
-    (public.get_order(current_setting('nexora.test.guest_no'),
-                      current_setting('nexora.test.guest_token')::uuid) -> 'order' ->> 'status')
-      = 'payment_submitted',
-    'guest can submit payment with the access token');
-end $$;
+    (public.get_order(v_order_no, v_token) -> 'order' ->> 'status') = 'payment_submitted',
+    'guest can submit payment with an order-scoped private proof path');
+end $;
 
 reset role;
 
