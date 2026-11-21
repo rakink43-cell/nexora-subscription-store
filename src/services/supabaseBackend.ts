@@ -396,8 +396,8 @@ export const orders = {
       .storage.from('payment-proofs')
       .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type })
     if (error) fail(error, 'Could not upload the screenshot.')
-    const { data } = sb().storage.from('payment-proofs').getPublicUrl(path)
-    return data.publicUrl
+    // Private bucket: store the object path, never an unusable public URL.
+    return path
   },
 }
 
@@ -527,6 +527,16 @@ export const admin = {
     const { data, error } = await builder.limit(300)
     if (error) fail(error)
     return (data ?? []) as unknown as Order[]
+  },
+
+  async paymentProofSignedUrl(path: string): Promise<string> {
+    const safePath = path.trim().replace(/^\/+/, '')
+    if (!safePath || safePath.includes('..')) throw new Error('Invalid payment proof path.')
+    const { data, error } = await sb()
+      .storage.from('payment-proofs')
+      .createSignedUrl(safePath, 120)
+    if (error) fail(error, 'Could not open payment proof.')
+    return data.signedUrl
   },
 
   async orderDetail(orderId: string): Promise<OrderDetail> {
