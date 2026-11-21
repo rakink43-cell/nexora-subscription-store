@@ -13,7 +13,14 @@ type AnalyticsData = {
 }
 
 function exportAnalytics(data: AnalyticsData) {
-  const quote = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
+  // Prevent spreadsheet formula injection from text fields such as page paths.
+  const quote = (value: string | number) => {
+    const text = String(value)
+    const safe = typeof value === 'string' && /^[\\u0000-\\u0020]*[=+\\-@]/.test(text)
+      ? `'${text}`
+      : text
+    return `"${safe.replace(/"/g, '""')}"`
+  }
   const rows = [
     ['Report', 'Date / Page', 'Page views', 'Signups', 'Count'],
     ...data.daily.map((day) => ['Daily', day.day, day.views, day.signups, '']),
