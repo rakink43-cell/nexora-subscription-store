@@ -10,7 +10,7 @@ was re-tested.
 
 | Command | What it proves | Latest status |
 |---|---|---|
-| `npm run typecheck` | TypeScript strict type checking | Not rerun in this batch |
+| `npm run verify:migrations` | Checks all 44 SQL migration files are present, ordered, and byte-matched in `apply_all.sql` | Passed in Cloudflare build |\n| `npm run typecheck` | TypeScript strict type checking | Not rerun in this batch |
 | `npm run build` | Production frontend bundle | Earlier source-code deployment built successfully; latest documentation/test-only commits are still processing |
 | `npm run db:test` | SQL/RLS/business-logic assertions on disposable PostgreSQL | Not run in this batch; run locally only |
 | `npm run test:e2e` | Playwright UI flows | Not run in this batch |
