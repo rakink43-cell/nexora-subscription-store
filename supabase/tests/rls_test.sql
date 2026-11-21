@@ -479,6 +479,36 @@ begin
     (select count(*) from public.profiles) >= 3,
     'admin can read all customer profiles');
 
+  -- Customer block/unblock actions are restricted and audited.
+  perform public.admin_set_customer_blocked(current_setting('nexora.test.user_b')::uuid, true);
+  perform tests.assert(
+    (select is_blocked from public.profiles where id = current_setting('nexora.test.user_b')::uuid),
+    'admin can block a customer');
+  perform tests.assert(
+    (select count(*) from public.admin_audit_log
+      where entity = 'profiles'
+        and entity_id = current_setting('nexora.test.user_b')
+        and action = 'block_customer') >= 1,
+    'customer block action is written to the audit log');
+
+  perform public.admin_set_customer_blocked(current_setting('nexora.test.user_b')::uuid, false);
+  perform tests.assert(
+    NOT (select is_blocked from public.profiles where id = current_setting('nexora.test.user_b')::uuid),
+    'admin can unblock a customer');
+  perform tests.assert(
+    (select count(*) from public.admin_audit_log
+      where entity = 'profiles'
+        and entity_id = current_setting('nexora.test.user_b')
+        and action = 'unblock_customer') >= 1,
+    'customer unblock action is written to the audit log');
+
+  perform tests.expect_error(
+    format('select public.admin_set_customer_blocked(%L, true)', current_setting('nexora.test.admin')),
+    'admin cannot block their own account');
+  perform tests.expect_error(
+    'select public.admin_set_customer_blocked(NULL, true)',
+    'customer block RPC rejects a missing customer id');
+
   v_res := public.admin_dashboard_stats();
   perform tests.assert((v_res ->> 'total_orders')::int = 2, 'dashboard stats count orders');
   perform tests.assert((v_res ->> 'pending_orders')::int >= 1, 'dashboard stats count pending orders');
