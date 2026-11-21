@@ -179,7 +179,14 @@ export default function AdminProducts() {
   }
 
   const exportCsv = () => {
-    const quote = (value: unknown) => '"' + String(value ?? '').replace(/"/g, '""') + '"'
+    const quote = (value: unknown) => {
+      const text = String(value ?? '')
+      // Prevent spreadsheet formula injection from editable text fields.
+      const safe = typeof value === 'string' && /^[\u0000-\u0020]*[=+\-@]/.test(text)
+        ? "'" + text
+        : text
+      return '"' + safe.replace(/"/g, '""') + '"'
+    }
     const rows = [
       ['name', 'slug', 'brand', 'original_price', 'discounted_price', 'availability', 'is_active', 'is_featured', 'new_user_offer_enabled'],
       // Export offer eligibility so catalog edits can preserve or explicitly change it.
@@ -191,7 +198,7 @@ export default function AdminProducts() {
     anchor.href = url
     anchor.download = 'nexora-products.csv'
     anchor.click()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   const parseCsvRow = (line: string) => {
