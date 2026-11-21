@@ -230,7 +230,12 @@ export default function AdminProducts() {
     }
     const index = (name: string) => headers.indexOf(name)
     const bySlug = new Map(products.map((product) => [product.slug, product]))
-    const updates = lines.slice(1).map((line) => parseCsvRow(line)).filter((cells) => cells.length === headers.length)
+    const updates = lines.slice(1).map((line) => parseCsvRow(line))
+    const malformedRow = updates.findIndex((cells) => cells.length !== headers.length)
+    if (malformedRow >= 0) {
+      toast.error('CSV row has a different number of columns', 'Check row ' + (malformedRow + 2) + '. Nothing imported.')
+      return
+    }
     const matched = updates.map((cells) => ({ cells, product: bySlug.get(cells[index('slug')].trim()), slug: cells[index('slug')].trim() }))
     const unknownSlugs = [...new Set(matched.filter((row) => !row.product).map((row) => row.slug || '(blank slug)'))]
     if (unknownSlugs.length) {
