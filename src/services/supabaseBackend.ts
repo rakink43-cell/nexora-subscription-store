@@ -153,7 +153,7 @@ export const auth = {
 
 /* ------------------------------- catalogue ------------------------------- */
 const PRODUCT_COLUMNS =
-  'id,category_id,name,slug,brand,short_description,description,image_url,gallery,duration,original_price,discounted_price,delivery_info,delivery_time,availability,is_featured,is_active,badge,rating,rating_count,sales_count,sort_order,created_at,updated_at'
+  'id,category_id,name,slug,brand,short_description,description,image_url,gallery,duration,original_price,discounted_price,new_user_offer_enabled,delivery_info,delivery_time,availability,is_featured,is_active,badge,rating,rating_count,sales_count,sort_order,created_at,updated_at'
 
 export const catalogue = {
   async categories(): Promise<Category[]> {
@@ -636,6 +636,7 @@ export const admin = {
       duration: input.duration,
       original_price: input.original_price,
       discounted_price: input.discounted_price,
+      new_user_offer_enabled: input.new_user_offer_enabled ?? false,
       delivery_info: input.delivery_info,
       delivery_time: input.delivery_time,
       availability: input.availability,
