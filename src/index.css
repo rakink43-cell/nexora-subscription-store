@@ -604,3 +604,16 @@ header.sticky nav a:hover, header.sticky nav button:hover { text-shadow:0 0 18px
  .nx-reference-title { max-width:65%;font-size:31px; }
  .nx-reference-subtitle { max-width:60%; }
 }
+
+/* NEXORA Gameverse — product card visual treatment */
+.nx-game-product-card { position:relative; isolation:isolate; border:1px solid rgba(185,91,255,.22); border-radius:16px; background:linear-gradient(155deg,rgba(31,21,57,.98),rgba(11,14,31,.99) 72%); box-shadow:0 12px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.035); transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease; }
+.nx-game-product-card::before { content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 50% 0%,rgba(191,54,255,.13),transparent 60%);opacity:.9; }
+.nx-game-product-card:hover { transform:translateY(-5px);border-color:rgba(221,107,255,.65);box-shadow:0 18px 42px rgba(0,0,0,.36),0 0 24px rgba(166,42,255,.16),inset 0 1px 0 rgba(255,255,255,.06); }
+.nx-game-product-card .nx-card-hover { transition:inherit; }
+.nx-game-product-card .rounded-lg { border-radius:10px; }
+.nx-game-product-card .bg-\[\#F00016\] { background:linear-gradient(100deg,#ff3b73,#c31cff);box-shadow:0 0 14px rgba(231,39,255,.25); }
+.nx-game-product-card .text-\[\#6EC1FF\] { color:#d9a0ff; }
+.nx-game-product-card button[aria-label*="Add"] { border-color:rgba(193,72,255,.45);background:rgba(155,48,255,.13);color:#e5b4ff;transition:background .2s,border-color .2s,box-shadow .2s; }
+.nx-game-product-card button[aria-label*="Add"]:hover { border-color:#d75bff;background:linear-gradient(130deg,#b72cff,#7627d7);color:white;box-shadow:0 0 16px rgba(190,58,255,.32); }
+.nx-game-product-card button[aria-label*="is in your cart"] { border-color:rgba(52,220,164,.45);background:rgba(52,220,164,.12);color:#72f4c6; }
+@media(prefers-reduced-motion:reduce) { .nx-game-product-card,.nx-game-product-card:hover { transition:none;transform:none; } }
