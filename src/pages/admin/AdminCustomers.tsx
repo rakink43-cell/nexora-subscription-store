@@ -20,6 +20,7 @@ export default function AdminCustomers() {
 
   const load = () => {
     setLoading(true)
+    setError(null)
     api.admin
       .customers()
       .then(setCustomers)
