@@ -103,20 +103,29 @@ These were real defects found by running the suite — not test-only edits.
 
 ---
 
-## 5. Not yet testable
+## 5. Live verification limits (2026-11-22)
 
-Registration, login against real Supabase Auth, and the full live order path **cannot**
-be exercised until the migrations are applied. Two independent blockers, both on the
-Supabase side:
+The production Supabase schema and migrations are now applied. The previous “schema is
+empty” note is obsolete.
 
-1. **No schema.** The `public` schema is empty; every table returns `PGRST205` and every
-   RPC `PGRST202`. The publishable key cannot run DDL, so this must be applied from the
-   dashboard SQL editor (see `docs/SETUP.md` step 2).
-2. **E-mail confirmation is on and the mailer is rate-limited.** `mailer_autoconfirm`
-   is `false`, so a new user cannot sign in until they confirm. Supabase's built-in SMTP
-   is capped per hour and the limit was already tripped during probing
-   (`429 over_email_send_rate_limit`). Supabase also rejects reserved domains
-   (`@example.com`, `.test`) with `email_address_invalid`.
+Verified against the live project in this pass:
+- The private `payment-proofs` bucket is still private.
+- The bounded order-scoped upload policy and admin-only read policy both exist.
+- Anonymous and authenticated callers can invoke `submit_payment`; the RPC itself checks
+  order ownership/access token, order state, active payment method, transaction ID and
+  proof path.
+- Payment proof filename validation accepts the exact NEXORA path format and rejects
+  invalid extensions and timestamp lengths.
+- The latest Cloudflare Pages build completed successfully after TypeScript fixes.
 
-Once the schema is applied, `npm run verify:supabase` flips to `✓ PROJECT READY`, and the
-live path can be tested end to end with a real mailbox.
+Still not end-to-end verified:
+- The live database currently has one profile and zero orders, so a real customer order
+  cannot be used to exercise upload → submit → signed admin preview → verification.
+- The full SQL regression suite was updated, but was not run against production. Do not
+  run the destructive local test runner against the live database.
+- Email confirmation remains enabled. A previous attempt encountered Supabase's built-in
+  mail rate limit, so real registration/login verification still requires a working
+  confirmation email.
+
+Use a separate test customer and a real test order in a safe test environment before
+claiming the complete live payment lifecycle is verified.
