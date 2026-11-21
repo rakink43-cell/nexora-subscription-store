@@ -35,6 +35,21 @@ import {
 import type { Product } from '../../types'
 import { validateStoreImage } from '../../lib/imageValidation'
 
+function validateProductImageUrl(value: string, label: string) {
+  const url = value.trim()
+  if (!url) return
+  if (url.length > 2048) throw new Error(label + ' URL is too long.')
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error(label + ' must be a complete image URL starting with https://.')
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error(label + ' must use http:// or https://.')
+  }
+}
+
 const EMPTY: Partial<Product> = {
   name: '',
   slug: '',
@@ -556,6 +571,16 @@ function ProductFormModal({
     if (Number(form.discounted_price ?? 0) > Number(form.original_price ?? 0)) {
       return setError('Discounted price cannot be higher than the original price.')
     }
+    try {
+      validateProductImageUrl(form.image_url ?? '', 'Main product image')
+      const gallery = [...new Set((form.gallery ?? []).map((url) => url.trim()).filter(Boolean))]
+      if (gallery.length > 20) throw new Error('Product gallery can contain up to 20 images.')
+      gallery.forEach((url, index) => validateProductImageUrl(url, 'Gallery image ' + (index + 1)))
+      setForm((current) => ({ ...current, gallery }))
+      form.gallery = gallery
+    } catch (err) {
+      return setError(err instanceof Error ? err.message : 'Please check the product image URLs.')
+    }
     setSaving(true)
     try {
       await api.admin.saveProduct({
@@ -723,9 +748,13 @@ function ProductFormModal({
                     for (const file of files) urls.push(await uploader(file))
                     const current = form.gallery ?? []
                     const existing = new Set(current)
-                    const added = urls.filter((url) => !existing.has(url))
+                    const added = urls.filter((url) => {
+                      if (existing.has(url)) return false
+                      existing.add(url)
+                      return true
+                    })
                     set('gallery', [...current, ...added])
-                    toast.success('Gallery images uploaded', `${urls.length} image(s) added`)
+                    toast.success('Gallery images uploaded', `${added.length} unique image(s) added`)
                   } catch (err) {
                     toast.error('Gallery upload failed', err instanceof Error ? err.message : undefined)
                   } finally {
