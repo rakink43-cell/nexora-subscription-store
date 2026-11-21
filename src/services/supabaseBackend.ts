@@ -530,8 +530,15 @@ export const admin = {
   },
 
   async paymentProofSignedUrl(path: string): Promise<string> {
-    const safePath = path.trim().replace(/^\/+/, '')
-    if (!safePath || safePath.includes('..')) throw new Error('Invalid payment proof path.')
+    let safePath = path.trim()
+    if (/^https?:\/\//i.test(safePath)) {
+      const marker = '/payment-proofs/'
+      const at = safePath.indexOf(marker)
+      if (at < 0) throw new Error('Payment proof URL is not from the private bucket.')
+      safePath = safePath.slice(at + marker.length).split('?')[0]
+    }
+    safePath = safePath.replace(/^\/+/, '')
+    if (!safePath || safePath.split('/').some((part) => part === '..')) throw new Error('Invalid payment proof path.')
     const { data, error } = await sb()
       .storage.from('payment-proofs')
       .createSignedUrl(safePath, 120)
