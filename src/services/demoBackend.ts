@@ -431,17 +431,23 @@ export const demoOrders = {
       throw new Error('Please provide a valid Bangladeshi mobile number.')
     if (!isEmail(input.customer_email)) throw new Error('Please provide a valid email address.')
 
-    // server-side re-pricing (mirrors place_order())
+    // Demo checkout mirrors trusted account-based pricing.
+    const demoUser = currentUser()
+    const priorOrders = demoUser ? state.orders.filter((o) => o.user_id === demoUser.id && !['cancelled', 'refunded'].includes(o.status)).length : 0
+    const demoOfferActive = Boolean(demoUser && priorOrders < 3)
     let subtotal = 0
-    const priced: { product: Product; qty: number }[] = []
+    const priced: { product: Product; qty: number; price: number }[] = []
     for (const line of input.items) {
       const product = state.products.find((p) => p.id === line.product_id && p.is_active)
       if (!product) throw new Error('A product in your cart is no longer available.')
       if (product.availability === 'out_of_stock')
         throw new Error(`${product.name} is currently out of stock.`)
       const qty = Math.max(1, Math.min(line.quantity || 1, 20))
-      subtotal += product.discounted_price * qty
-      priced.push({ product, qty })
+      const price = demoOfferActive && product.new_user_offer_enabled
+        ? Math.round(product.discounted_price * 0.10 * 100) / 100
+        : product.discounted_price
+      subtotal += price * qty
+      priced.push({ product, qty, price })
     }
 
     let discount = 0
@@ -487,7 +493,7 @@ export const demoOrders = {
     }
     state.orders.unshift(order)
 
-    for (const { product, qty } of priced) {
+    for (const { product, qty, price } of priced) {
       state.orderItems.push({
         id: uid('oi'),
         order_id: orderId,
@@ -495,9 +501,9 @@ export const demoOrders = {
         product_name: product.name,
         product_image: product.image_url,
         duration: product.duration,
-        unit_price: product.discounted_price,
+        unit_price: price,
         quantity: qty,
-        line_total: product.discounted_price * qty,
+        line_total: price * qty,
         created_at: now,
       })
     }
