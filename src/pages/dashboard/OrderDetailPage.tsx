@@ -238,7 +238,7 @@ export default function OrderDetailPage() {
               <div className="flex flex-wrap items-center gap-4 text-[12px]">
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-white/35">Method</p>
-                  <p className="text-white/80">{PAYMENT_METHOD_META[payment.method].label}</p>
+                  <p className="text-white/80">{paymentMethods.find((item) => item.method === payment.method)?.display_name ?? PAYMENT_METHOD_META[payment.method]?.label ?? payment.method}</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-white/35">Transaction</p>
