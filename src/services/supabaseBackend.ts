@@ -609,22 +609,32 @@ export const admin = {
   },
 
   async customers() {
-    const { data, error } = await sb()
-      .from('profiles')
-      .select('*, orders(id,total,status)')
-      .order('created_at', { ascending: false })
-      .limit(500)
-    if (error) fail(error)
-    return (data ?? []).map((p) => {
-      const orders = (p.orders ?? []) as { total: number; status: string }[]
-      return {
-        ...(p as unknown as Profile),
-        order_count: orders.length,
-        total_spent: orders
-          .filter((o) => o.status === 'completed')
-          .reduce((s, o) => s + Number(o.total), 0),
-      }
-    })
+    const [profilesResult, rolesResult] = await Promise.all([
+      sb()
+        .from('profiles')
+        .select('*, orders(id,total,status)')
+        .order('created_at', { ascending: false })
+        .limit(500),
+      sb().from('user_roles').select('user_id,role').in('role', ['admin', 'staff']),
+    ])
+    if (profilesResult.error) fail(profilesResult.error)
+    if (rolesResult.error) fail(rolesResult.error, 'Could not verify customer roles.')
+
+    // Admin/staff profiles are not customers and must never appear in the
+    // customer-management list or its customer-only metrics.
+    const privilegedIds = new Set((rolesResult.data ?? []).map((row) => row.user_id))
+    return (profilesResult.data ?? [])
+      .filter((profile) => !privilegedIds.has(profile.id))
+      .map((p) => {
+        const orders = (p.orders ?? []) as { total: number; status: string }[]
+        return {
+          ...(p as unknown as Profile),
+          order_count: orders.length,
+          total_spent: orders
+            .filter((o) => o.status === 'completed')
+            .reduce((s, o) => s + Number(o.total), 0),
+        }
+      })
   },
 
   async setBlocked(userId: string, blocked: boolean) {
