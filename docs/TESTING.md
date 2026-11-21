@@ -1,20 +1,20 @@
 # NEXORA — Testing Checklist
 
-Every command below has been run. Results are stated as they actually are, including
-what cannot be tested yet.
+This document distinguishes expected test coverage from checks actually performed during
+the latest work batch. Do not treat an old test result as proof that the current commit
+was re-tested.
 
 ---
 
-## 1. Commands
+## 1. Commands and current status
 
-| Command | What it proves | Status |
+| Command | What it proves | Latest status |
 |---|---|---|
-| `npm run typecheck` | TypeScript strict build, 0 errors | ✅ 0 errors |
-| `npm run build` | production bundle | ✅ built in ~1.1 s |
-| `npm run db:test` | 72 SQL assertions on a real PostgreSQL 17 instance | ✅ all pass |
-| `npx playwright test tests/e2e/smoke.spec.ts tests/e2e/live-setup.spec.ts` | app boots in whatever mode `.env` configures | ✅ 3 passed |
-| `npm run dev:demo` + `npx playwright test --project=demo` | full UI flows on the demo backend | ✅ 25 passed |
-| `npm run verify:supabase` | live project readiness + RLS probing | ⚠️ 27 problems — migrations not applied |
+| `npm run typecheck` | TypeScript strict type checking | Not rerun in this batch |
+| `npm run build` | Production frontend bundle | Earlier source-code deployment built successfully; latest documentation/test-only commits are still processing |
+| `npm run db:test` | SQL/RLS/business-logic assertions on disposable PostgreSQL | Not run in this batch; run locally only |
+| `npm run test:e2e` | Playwright UI flows | Not run in this batch |
+| `npm run verify:supabase` | Live project readiness and RLS probing | Live DB inspected manually; 1 profile and 0 orders, so full payment lifecycle is not testable yet |
 
 ### Two servers, two purposes
 
@@ -62,7 +62,7 @@ decrement, coupon validation, storage bucket visibility (`product-images` public
 
 ---
 
-## 3. Bugs this pass actually fixed
+## 3. Previously fixed bugs
 
 These were real defects found by running the suite — not test-only edits.
 
@@ -83,6 +83,17 @@ These were real defects found by running the suite — not test-only edits.
 5. **Storage bucket detection was meaningless.** An anonymous `list()` returns `200 []`
    for a bucket that does not exist. The verifier now attempts an upload, where a missing
    bucket answers `NoSuchBucket` and an existing one rejects the anonymous write.
+
+---
+
+## 3A. Fixes in the latest maintenance batch
+
+1. **SQL test block quoting was malformed.** Two payment regression blocks used `do $`
+   / `end $;` instead of valid `do $$` / `end $$;`. Both blocks now use valid dollar quoting.
+2. **The full SQL bundle was stale.** `supabase/apply_all.sql` previously stopped at migration 0009
+   while the repository had many later security, analytics, customer-block, and payment
+   hardening migrations. It now includes all 44 migration files in order, through the
+   latest admin password-token index migration.
 
 ---
 
