@@ -394,10 +394,20 @@ export const orders = {
 
   /** Upload a payment screenshot into the private `payment-proofs` bucket. */
   async uploadProof(orderNumber: string, file: File): Promise<string> {
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const allowed = ['jpg', 'jpeg', 'png', 'webp', 'pdf']
-    if (!allowed.includes(ext)) throw new Error('Please upload a JPG, PNG, WEBP or PDF file.')
-    if (file.size > 5 * 1024 * 1024) throw new Error('File must be smaller than 5 MB.')
+    const extensionByMime: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'application/pdf': 'pdf',
+    }
+    const ext = extensionByMime[file.type]
+    if (!ext) throw new Error('Please upload a valid JPG, PNG, WEBP or PDF file.')
+    if (file.size < 1 || file.size > 5 * 1024 * 1024) {
+      throw new Error('Payment proof must be between 1 byte and 5 MB.')
+    }
+    if (!/^NX-[0-9]{6}-[0-9]{5}$/.test(orderNumber)) {
+      throw new Error('Invalid order number for payment proof upload.')
+    }
     const path = `${orderNumber}/${Date.now()}.${ext}`
     const { error } = await sb()
       .storage.from('payment-proofs')
