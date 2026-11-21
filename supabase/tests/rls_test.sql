@@ -434,7 +434,11 @@ select set_config('request.jwt.claim.sub', current_setting('nexora.test.admin'),
 select tests.assert(public.is_admin(), 'admin role resolves through user_roles');
 
 do $$
-declare v_res jsonb;
+declare
+  v_res jsonb;
+  v_payment_id uuid;
+  v_pending_order_id uuid;
+  v_pending_payment_id uuid;
 begin
   perform tests.assert(
     (select count(*) from public.orders) = 2,
@@ -449,10 +453,38 @@ begin
   perform tests.assert((v_res ->> 'pending_orders')::int >= 1, 'dashboard stats count pending orders');
   perform tests.assert(jsonb_array_length(v_res -> 'sales_series') = 14, 'dashboard returns a 14-day sales series');
 
-  -- verify the pending payment
-  perform public.admin_verify_payment(
-    (select id from public.payments where status = 'submitted' order by created_at limit 1),
-    'verified'::public.payment_status, 'bKash TrxID matched');
+  -- Order/payment fields cannot be edited directly, even by an admin.
+  perform tests.assert(
+    NOT has_column_privilege('authenticated', 'public.orders', 'status', 'UPDATE'),
+    'order status is writable only through the audited RPC');
+  perform tests.assert(
+    NOT has_column_privilege('authenticated', 'public.payments', 'status', 'UPDATE'),
+    'payment status is writable only through the audited RPC');
+  perform tests.assert(
+    has_column_privilege('authenticated', 'public.orders', 'admin_note', 'UPDATE'),
+    'admin can still update the internal order note');
+
+  v_pending_order_id := (select id from public.orders where status = 'pending_payment' limit 1);
+  v_pending_payment_id := (select id from public.payments where status = 'pending' limit 1);
+  perform tests.expect_error(
+    format('select public.admin_update_order_status(%L, ''completed''::public.order_status, null)', v_pending_order_id),
+    'admin cannot complete an order before payment verification');
+  perform tests.expect_error(
+    format('select public.admin_verify_payment(%L, ''verified''::public.payment_status, null)', v_pending_payment_id),
+    'admin cannot verify a payment that was never submitted');
+  perform tests.expect_error(
+    format('update public.orders set status = ''completed'' where id = %L', v_pending_order_id),
+    'admin cannot bypass the order status RPC');
+  perform tests.expect_error(
+    format('update public.payments set status = ''verified'' where id = %L', v_pending_payment_id),
+    'admin cannot bypass the payment verification RPC');
+
+  -- verify the submitted payment exactly once
+  v_payment_id := (select id from public.payments where status = 'submitted' order by created_at limit 1);
+  perform public.admin_verify_payment(v_payment_id, 'verified'::public.payment_status, 'bKash TrxID matched');
+  perform tests.expect_error(
+    format('select public.admin_verify_payment(%L, ''verified''::public.payment_status, null)', v_payment_id),
+    'a payment cannot be verified twice without a new submission');
 
   perform tests.assert(
     (select count(*) from public.orders where status = 'payment_verified') = 1,
