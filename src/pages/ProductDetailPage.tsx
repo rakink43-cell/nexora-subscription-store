@@ -238,6 +238,19 @@ export default function ProductDetailPage() {
                 </p>
               )}
             </div>
+            {product.new_user_offer_enabled && (
+              <div className="mt-3 rounded-xl border border-rose-300/20 bg-rose-500/[0.08] p-3.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-rose-200">90% New-account offer</span>
+                  <span className="text-[10px] font-semibold text-rose-200/70">First 3 orders</span>
+                </div>
+                <p className="mt-1.5 text-[12px] text-white/60">
+                  Eligible price: <b className="text-white">{formatBDT(Math.round(Number(product.discounted_price) * 0.10 * 100) / 100)}</b>
+                  <span className="ml-1 text-white/35 line-through">{formatBDT(product.discounted_price)}</span>
+                </p>
+                <p className="mt-1 text-[10.5px] leading-relaxed text-white/40">Available to signed-in customers within their first 3 orders. Final eligibility and price are confirmed at checkout.</p>
+              </div>
+            )}
 
             {/* quantity */}
             <div className="mt-4 flex items-center justify-between gap-3">
