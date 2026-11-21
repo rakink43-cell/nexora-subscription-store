@@ -308,10 +308,7 @@ export default function AdminOrders() {
         onClose={() => setActiveOrder(null)}
         onChanged={async () => {
           await load()
-          if (activeOrder) {
-            const fresh = await api.admin.orderDetail(activeOrder.order.id)
-            setActiveOrder(fresh)
-          }
+          if (activeOrder) await openOrder(activeOrder.order.id)
         }}
       />
     </div>
