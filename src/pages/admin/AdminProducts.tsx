@@ -571,13 +571,14 @@ function ProductFormModal({
     if (Number(form.discounted_price ?? 0) > Number(form.original_price ?? 0)) {
       return setError('Discounted price cannot be higher than the original price.')
     }
+    let normalizedGallery: string[]
     try {
       validateProductImageUrl(form.image_url ?? '', 'Main product image')
       const gallery = [...new Set((form.gallery ?? []).map((url) => url.trim()).filter(Boolean))]
       if (gallery.length > 20) throw new Error('Product gallery can contain up to 20 images.')
       gallery.forEach((url, index) => validateProductImageUrl(url, 'Gallery image ' + (index + 1)))
+      normalizedGallery = gallery
       setForm((current) => ({ ...current, gallery }))
-      form.gallery = gallery
     } catch (err) {
       return setError(err instanceof Error ? err.message : 'Please check the product image URLs.')
     }
@@ -585,6 +586,7 @@ function ProductFormModal({
     try {
       await api.admin.saveProduct({
         ...form,
+        gallery: normalizedGallery,
         name: form.name.trim(),
         slug,
         original_price: Number(form.original_price ?? 0),
