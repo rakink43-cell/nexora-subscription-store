@@ -604,7 +604,12 @@ function ProductFormModal({
     if (!form.name?.trim()) return setError('Product name is required.')
     const slug = form.slug?.trim() || slugify(form.name)
     if (!slug) return setError('Slug could not be generated — add one manually.')
-    if (Number(form.discounted_price ?? 0) > Number(form.original_price ?? 0)) {
+    const originalPrice = Number(form.original_price ?? 0)
+    const discountedPrice = Number(form.discounted_price ?? 0)
+    if (!Number.isFinite(originalPrice) || !Number.isFinite(discountedPrice) || originalPrice < 0 || discountedPrice < 0) {
+      return setError('Prices must be valid, non-negative numbers.')
+    }
+    if (discountedPrice > originalPrice) {
       return setError('Discounted price cannot be higher than the original price.')
     }
     let normalizedGallery: string[]
@@ -625,8 +630,8 @@ function ProductFormModal({
         gallery: normalizedGallery,
         name: form.name.trim(),
         slug,
-        original_price: Number(form.original_price ?? 0),
-        discounted_price: Number(form.discounted_price ?? 0),
+        original_price: originalPrice,
+        discounted_price: discountedPrice,
       } as Product)
       toast.success(value.isNew ? 'Product created' : 'Product updated', form.name)
       await onSaved()
