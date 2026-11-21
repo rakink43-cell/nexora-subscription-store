@@ -45,6 +45,8 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
+  const [offerStatus, setOfferStatus] = useState({ eligible: false, orders_used: 0, orders_remaining: 0 })
+  const [offerStatusLoading, setOfferStatusLoading] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -57,6 +59,21 @@ export default function CheckoutPage() {
     }
   }, [user])
 
+  useEffect(() => {
+    let active = true
+    if (!user) {
+      setOfferStatus({ eligible: false, orders_used: 0, orders_remaining: 0 })
+      setOfferStatusLoading(false)
+      return () => { active = false }
+    }
+    setOfferStatusLoading(true)
+    api.orders.offerStatus()
+      .then((status) => { if (active) setOfferStatus(status) })
+      .catch(() => { if (active) setOfferStatus({ eligible: false, orders_used: 0, orders_remaining: 0 }) })
+      .finally(() => { if (active) setOfferStatusLoading(false) })
+    return () => { active = false }
+  }, [user?.id])
+
   const activeMethods = useMemo(
     () => paymentMethods.filter((m) => m.payment_type !== 'gateway'),
     [paymentMethods],
@@ -68,8 +85,15 @@ export default function CheckoutPage() {
     }
   }, [activeMethods, method])
 
+  const offerSubtotal = lines.reduce((sum, line) => {
+    const unit = user && offerStatus.eligible && line.newUserOfferEnabled
+      ? Math.round(line.unitPrice * 0.10 * 100) / 100
+      : line.unitPrice
+    return sum + unit * line.quantity
+  }, 0)
+  const offerSavings = Math.max(0, subtotal - offerSubtotal)
   const discount = coupon?.discount ?? 0
-  const total = Math.max(0, subtotal - discount)
+  const total = Math.max(0, offerSubtotal - discount)
   const selectedMethod = activeMethods.find((m) => m.method_key === method)
 
   if (lines.length === 0) {
@@ -97,7 +121,7 @@ export default function CheckoutPage() {
     if (!code) return
     setCouponBusy(true)
     try {
-      const result = await api.coupons.validate(code, subtotal)
+      const result = await api.coupons.validate(code, offerSubtotal)
       if (result.valid) {
         setCoupon({
           code: code.toUpperCase(),
@@ -115,6 +139,17 @@ export default function CheckoutPage() {
       setCouponBusy(false)
     }
   }
+
+  useEffect(() => {
+    if (!coupon?.code) return
+    let active = true
+    api.coupons.validate(coupon.code, offerSubtotal).then((result) => {
+      if (!active) return
+      if (result.valid) setCoupon((current) => current ? { ...current, discount: Number(result.discount ?? 0), description: result.description ?? current.description } : current)
+      else setCoupon(null)
+    }).catch(() => undefined)
+    return () => { active = false }
+  }, [offerSubtotal, coupon?.code])
 
   const copy = async (text: string, key: string) => {
     try {
@@ -387,6 +422,18 @@ export default function CheckoutPage() {
           <div className="nx-card p-5">
             <h2 className="font-display text-base font-bold text-white">Order summary</h2>
 
+            {offerStatusLoading ? (
+              <p className="mt-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-[11.5px] text-white/45">Checking new-account offer…</p>
+            ) : user && offerStatus.eligible ? (
+              <p className="mt-2 rounded-lg border border-rose-300/20 bg-rose-500/[0.08] px-3 py-2 text-[11.5px] text-rose-100">
+                90% new-account offer active for eligible products · {offerStatus.orders_remaining} order{offerStatus.orders_remaining === 1 ? '' : 's'} left
+              </p>
+            ) : user ? (
+              <p className="mt-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-[11.5px] text-white/45">Your first 3 order offer has been used.</p>
+            ) : (
+              <p className="mt-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-[11.5px] text-white/45">Sign in to check eligibility for the first-3-order offer.</p>
+            )}
+
             <ul className="mt-3.5 space-y-2.5">
               {lines.map((l) => (
                 <li key={l.productId} className="flex items-center gap-2.5">
@@ -403,8 +450,9 @@ export default function CheckoutPage() {
                       {l.duration} · × {l.quantity}
                     </p>
                   </div>
-                  <span className="shrink-0 text-[12.5px] font-semibold text-white">
-                    {formatBDT(l.unitPrice * l.quantity)}
+                  <span className="shrink-0 text-right text-[12.5px] font-semibold text-white">
+                    {formatBDT((user && offerStatus.eligible && l.newUserOfferEnabled ? Math.round(l.unitPrice * 0.10 * 100) / 100 : l.unitPrice) * l.quantity)}
+                    {user && offerStatus.eligible && l.newUserOfferEnabled && <span className="block text-[9.5px] font-bold text-rose-300">90% OFF</span>}
                   </span>
                 </li>
               ))}
@@ -462,7 +510,10 @@ export default function CheckoutPage() {
             <dl className="mt-4 space-y-2 text-[13px]">
               <div className="flex justify-between">
                 <dt className="text-white/50">Subtotal ({count})</dt>
-                <dd className="font-medium text-white">{formatBDT(subtotal)}</dd>
+                <dd className="text-right font-medium text-white">
+                  {formatBDT(offerSubtotal)}
+                  {offerSavings > 0 && <span className="block text-[10.5px] text-white/35 line-through">{formatBDT(subtotal)}</span>}
+                </dd>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-emerald-400">
