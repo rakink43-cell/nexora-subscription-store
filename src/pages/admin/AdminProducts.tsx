@@ -181,8 +181,9 @@ export default function AdminProducts() {
   const exportCsv = () => {
     const quote = (value: unknown) => '"' + String(value ?? '').replace(/"/g, '""') + '"'
     const rows = [
-      ['name', 'slug', 'brand', 'original_price', 'discounted_price', 'availability', 'is_active', 'is_featured'],
-      ...filtered.map((product) => [product.name, product.slug, product.brand, product.original_price, product.discounted_price, product.availability, product.is_active, product.is_featured]),
+      ['name', 'slug', 'brand', 'original_price', 'discounted_price', 'availability', 'is_active', 'is_featured', 'new_user_offer_enabled'],
+      // Export offer eligibility so catalog edits can preserve or explicitly change it.
+      ...filtered.map((product) => [product.name, product.slug, product.brand, product.original_price, product.discounted_price, product.availability, product.is_active, product.is_featured, product.new_user_offer_enabled]),
     ]
     const csv = rows.map((row) => row.map(quote).join(',')).join('\r\n')
     const url = URL.createObjectURL(new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }))
@@ -240,7 +241,7 @@ export default function AdminProducts() {
 
     // Validate every matched row before writing, avoiding silent skips and
     // preventing malformed CSV from partially changing the catalogue.
-    let prepared: Array<{ product: Product; original: number; discounted: number; availability?: string; active?: string; featured?: string; brand?: string }> 
+    let prepared: Array<{ product: Product; original: number; discounted: number; availability?: string; active?: string; featured?: string; offer?: string; brand?: string }> 
     try {
       const allowedAvailability: Product['availability'][] = ['in_stock', 'limited', 'out_of_stock']
       prepared = matched.map(({ cells, product }) => {
@@ -256,6 +257,8 @@ export default function AdminProducts() {
       }
       const active = index('is_active') >= 0 ? cells[index('is_active')].trim().toLowerCase() : undefined
       const featured = index('is_featured') >= 0 ? cells[index('is_featured')].trim().toLowerCase() : undefined
+      const offer = index('new_user_offer_enabled') >= 0 ? cells[index('new_user_offer_enabled')].trim().toLowerCase() : undefined
+      if (offer !== undefined && !['true', 'false'].includes(offer)) throw new Error('new_user_offer_enabled must be true or false for slug: ' + product!.slug)
       if (active !== undefined && !['true', 'false'].includes(active)) throw new Error('is_active must be true or false for slug: ' + product!.slug)
       if (featured !== undefined && !['true', 'false'].includes(featured)) throw new Error('is_featured must be true or false for slug: ' + product!.slug)
       return {
@@ -265,6 +268,7 @@ export default function AdminProducts() {
         availability,
         active,
         featured,
+        offer,
         brand: index('brand') >= 0 ? cells[index('brand')] : undefined,
       }
       })
@@ -284,6 +288,7 @@ export default function AdminProducts() {
           ...(row.availability !== undefined ? { availability: row.availability as Product['availability'] } : {}),
           ...(row.active !== undefined ? { is_active: row.active === 'true' } : {}),
           ...(row.featured !== undefined ? { is_featured: row.featured === 'true' } : {}),
+          ...(row.offer !== undefined ? { new_user_offer_enabled: row.offer === 'true' } : {}),
         })
         count++
       }
