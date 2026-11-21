@@ -785,7 +785,7 @@ function ProductFormModal({
                   // Check the maximum before uploading so rejected selections do not
                   // create unnecessary files in storage.
                   if (current.length + files.length > 20) {
-                    toast.error('Gallery limit reached', `You can keep up to 20 additional images. Currently ${current.length} image(s) are listed.`)
+                    toast.error('Gallery limit reached', `A product can have up to 20 gallery images. Currently ${current.length} image(s) are listed.`)
                     return
                   }
                   setUploading(true)
