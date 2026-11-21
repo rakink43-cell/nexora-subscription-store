@@ -189,7 +189,7 @@ export default function OrderPage() {
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-white/35">Method</p>
                     <p className="text-[13px] font-semibold text-white">
-                      {PAYMENT_METHOD_META[payment.method].label}
+                      {paymentMethods.find((item) => item.method === payment.method)?.display_name ?? PAYMENT_METHOD_META[payment.method]?.label ?? payment.method}
                     </p>
                   </div>
                   <div>
@@ -329,7 +329,7 @@ export default function OrderPage() {
             </dl>
             <div className="mt-3 flex items-center gap-2 border-t border-white/8 pt-3">
               <Badge className="border-white/10 bg-white/[0.04] text-white/60">
-                {PAYMENT_METHOD_META[order.payment_method].label}
+                {paymentMethods.find((item) => item.method === order.payment_method)?.display_name ?? PAYMENT_METHOD_META[order.payment_method]?.label ?? order.payment_method}
               </Badge>
               {!user && (
                 <Link
