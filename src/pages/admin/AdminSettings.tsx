@@ -7,6 +7,7 @@ import { useToast } from '../../context/ToastContext'
 import { useStore } from '../../context/SettingsContext'
 import type { PaymentMethodConfig, SiteSettings } from '../../types'
 import { supabase } from '../../lib/supabase'
+import { validateStoreImage } from '../../lib/imageValidation'
 
 export default function AdminSettings() {
   const { settings, paymentMethods, reload } = useStore()
@@ -182,16 +183,9 @@ export default function AdminSettings() {
                     const file = e.target.files?.[0]
                     e.target.value = ''
                     if (!file) return
-                    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                      toast.error('Please choose a JPG, PNG or WEBP image.')
-                      return
-                    }
-                    if (file.size > 4 * 1024 * 1024) {
-                      toast.error('Banner image must be smaller than 4 MB.')
-                      return
-                    }
                     setBannerUploading(true)
                     try {
+                      await validateStoreImage(file)
                       const uploader = (api.admin as { uploadProductImage?: (file: File) => Promise<string> }).uploadProductImage
                       if (!uploader) throw new Error('Image upload requires a connected Supabase project.')
                       const url = await uploader(file)
