@@ -781,3 +781,70 @@ header.sticky nav a:hover, header.sticky nav button:hover { text-shadow:0 0 18px
     padding: 6px;
   }
 }
+
+/* Gameverse polish for the complete administrator workspace */
+.nx-game-admin {
+  --nx-admin-violet: #a855f7;
+  --nx-admin-pink: #ec4899;
+  background:
+    radial-gradient(ellipse at 78% -10%, rgba(168,85,247,.11), transparent 34%),
+    radial-gradient(ellipse at 8% 42%, rgba(124,58,237,.055), transparent 28%),
+    #05070c;
+}
+.nx-game-admin header {
+  border-color: rgba(168,85,247,.17);
+  background: rgba(7,6,17,.94);
+  box-shadow: 0 8px 30px rgba(0,0,0,.2);
+}
+.nx-game-admin aside {
+  border-color: rgba(168,85,247,.15);
+  background: linear-gradient(180deg,#090714,#05070c 75%);
+}
+.nx-game-admin nav a[aria-current="page"] {
+  border: 1px solid rgba(192,132,252,.22);
+  background: linear-gradient(100deg,rgba(168,85,247,.19),rgba(236,72,153,.07));
+  color: #e9d5ff;
+  box-shadow: inset 0 0 18px rgba(168,85,247,.05), 0 0 18px rgba(168,85,247,.055);
+}
+.nx-game-admin main h1,
+.nx-game-admin main h2 {
+  text-shadow: 0 0 22px rgba(168,85,247,.09);
+}
+.nx-game-admin main section.rounded-xl {
+  border-color: rgba(168,85,247,.17);
+  background: linear-gradient(145deg,rgba(22,16,38,.94),rgba(8,10,20,.98));
+  box-shadow: 0 12px 34px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.025);
+}
+.nx-game-admin main [class*="bg-[#008CFF]/10"],
+.nx-game-admin main [class*="bg-[#008CFF]/15"] {
+  background-color: rgba(168,85,247,.14);
+}
+.nx-game-admin main [class*="text-[#6EC1FF]"],
+.nx-game-admin main [class*="text-[#7CC7FF]"] {
+  color: #d8b4fe;
+}
+.nx-game-admin main [class*="border-[#008CFF]"] {
+  border-color: rgba(192,132,252,.48);
+}
+.nx-game-admin main button[class*="bg-[#008CFF]"],
+.nx-game-admin main a[class*="bg-[#008CFF]"] {
+  background-image: linear-gradient(110deg,#a855f7,#7c3aed 58%,#db2777);
+}
+.nx-game-admin main tr:hover {
+  background-color: rgba(168,85,247,.035);
+}
+.nx-game-admin main input:focus,
+.nx-game-admin main textarea:focus,
+.nx-game-admin main select:focus {
+  border-color: rgba(192,132,252,.6);
+  box-shadow: 0 0 0 3px rgba(168,85,247,.09);
+}
+.nx-game-admin main .nx-admin-game-stat,
+.nx-game-admin main [class*="rounded-xl border border-white/8 bg-[#080D18]"] {
+  border-color: rgba(168,85,247,.16);
+}
+@media (max-width: 1023px) {
+  .nx-game-admin aside {
+    box-shadow: 18px 0 50px rgba(0,0,0,.42);
+  }
+}
