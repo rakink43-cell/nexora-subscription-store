@@ -48,6 +48,7 @@ function allowedNextStatuses(status: OrderStatus): OrderStatus[] {
     case 'cancelled': return ['cancelled']
     case 'refunded': return ['refunded']
   }
+  return [status]
 }
 
 export default function AdminOrders() {
