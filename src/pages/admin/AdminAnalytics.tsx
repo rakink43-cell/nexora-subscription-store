@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Activity, Eye, UserRound, UserPlus } from 'lucide-react'
+import { Activity, Eye, UserRound, UserPlus, Download } from 'lucide-react'
 import { api } from '../../lib/api'
 import { AdminCard, AdminHeader, StatTile } from '../../components/admin/AdminUI'
 import { ErrorNote, Skeleton } from '../../components/ui'
@@ -10,6 +10,23 @@ type AnalyticsData = {
   signups: number
   daily: { day: string; views: number; signups: number }[]
   pages: { path: string; count: number }[]
+}
+
+function exportAnalytics(data: AnalyticsData) {
+  const quote = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
+  const rows = [
+    ['Report', 'Date / Page', 'Page views', 'Signups', 'Count'],
+    ...data.daily.map((day) => ['Daily', day.day, day.views, day.signups, '']),
+    ...data.pages.map((page) => ['Top page', page.path, '', '', page.count]),
+    ['Summary', 'Last 30 days', data.page_views, data.signups, data.visitors],
+  ]
+  const csv = rows.map((row) => row.map((value) => quote(value)).join(',')).join('\r\n')
+  const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `nexora-analytics-${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 export default function AdminAnalytics() {
@@ -33,7 +50,12 @@ export default function AdminAnalytics() {
   const maxSignups = Math.max(1, ...(data?.daily ?? []).map((item) => item.signups))
   return (
     <div>
-      <AdminHeader title="Analytics" description="Privacy-conscious traffic and signup overview for the last 30 days." />
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <AdminHeader title="Analytics" description="Privacy-conscious traffic and signup overview for the last 30 days." />
+        <button type="button" disabled={loading || !data} onClick={() => data && exportAnalytics(data)} className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white/75 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-40">
+          <Download className="h-3.5 w-3.5" /> Export CSV
+        </button>
+      </div>
       {error && <ErrorNote message={error} className="mb-4" />}
       <div className="grid gap-2.5 sm:grid-cols-3">
         <StatTile label="Page views" value={String(data?.page_views ?? 0)} icon={<Eye className="h-4 w-4" />} hint="Last 30 days" loading={loading} />
@@ -45,7 +67,7 @@ export default function AdminAnalytics() {
           {loading ? <Skeleton className="h-40 w-full" /> : data?.daily.length ? (
             <div className="flex h-40 items-end gap-1.5">
               {data.daily.map((day) => (
-                <div key={day.day} className="flex min-w-0 flex-1 flex-col items-center justify-end">
+                <div key={day.day} title={`${day.day}: ${day.views} page views`} className="flex min-w-0 flex-1 flex-col items-center justify-end">
                   <span className="mb-1 text-[9px] text-white/35">{day.views || ''}</span>
                   <div className="w-full rounded-t bg-gradient-to-t from-[#0067C5]/40 to-[#38A8FF]" style={{ height: `${Math.max(3, day.views / max * 100)}%` }} />
                   <span className="mt-1 text-[8px] text-white/30">{new Date(day.day).toLocaleDateString('en-GB', { day: '2-digit' })}</span>
@@ -72,7 +94,7 @@ export default function AdminAnalytics() {
           {loading ? <Skeleton className="h-32 w-full" /> : data?.daily.length ? (
             <div className="flex h-32 items-end gap-1.5">
               {data.daily.map((day) => (
-                <div key={day.day} className="flex min-w-0 flex-1 flex-col items-center justify-end">
+                <div key={day.day} title={`${day.day}: ${day.signups} new signups`} className="flex min-w-0 flex-1 flex-col items-center justify-end">
                   <span className="mb-1 text-[9px] text-white/35">{day.signups || ''}</span>
                   <div className="w-full rounded-t bg-gradient-to-t from-violet-500/40 to-violet-300" style={{ height: `${Math.max(3, day.signups / maxSignups * 100)}%` }} />
                   <span className="mt-1 text-[8px] text-white/30">{new Date(day.day).toLocaleDateString('en-GB', { day: '2-digit' })}</span>
