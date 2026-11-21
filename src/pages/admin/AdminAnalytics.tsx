@@ -30,6 +30,7 @@ export default function AdminAnalytics() {
   }, [])
 
   const max = Math.max(1, ...(data?.daily ?? []).map((item) => item.views))
+  const maxSignups = Math.max(1, ...(data?.daily ?? []).map((item) => item.signups))
   return (
     <div>
       <AdminHeader title="Analytics" description="Privacy-conscious traffic and signup overview for the last 30 days." />
@@ -64,6 +65,21 @@ export default function AdminAnalytics() {
               ))}
             </div>
           ) : <p className="py-8 text-center text-[12px] text-white/40">No page data yet.</p>}
+        </AdminCard>
+      </div>
+      <div className="mt-4">
+        <AdminCard title="Daily account signups" description="New customer accounts created over the last 14 days">
+          {loading ? <Skeleton className="h-32 w-full" /> : data?.daily.length ? (
+            <div className="flex h-32 items-end gap-1.5">
+              {data.daily.map((day) => (
+                <div key={day.day} className="flex min-w-0 flex-1 flex-col items-center justify-end">
+                  <span className="mb-1 text-[9px] text-white/35">{day.signups || ''}</span>
+                  <div className="w-full rounded-t bg-gradient-to-t from-violet-500/40 to-violet-300" style={{ height: `${Math.max(3, day.signups / maxSignups * 100)}%` }} />
+                  <span className="mt-1 text-[8px] text-white/30">{new Date(day.day).toLocaleDateString('en-GB', { day: '2-digit' })}</span>
+                </div>
+              ))}
+            </div>
+          ) : <p className="py-8 text-center text-[12px] text-white/40">No signup data yet.</p>}
         </AdminCard>
       </div>
       <p className="mt-3 flex items-center gap-1.5 text-[10.5px] text-white/30"><Activity className="h-3 w-3" /> Visitor counts use a temporary browser-session ID. No names, emails or IP addresses are stored in analytics.</p>
