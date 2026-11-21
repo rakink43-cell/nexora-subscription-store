@@ -530,6 +530,15 @@ function ProductFormModal({
   }
 
   const uploadImage = async (file: File) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowed.includes(file.type)) {
+      toast.error('Please choose a JPG, PNG or WEBP image.')
+      return
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error('Image must be smaller than 4 MB.')
+      return
+    }
     setUploading(true)
     try {
       if (!('uploadProductImage' in api.admin)) {
@@ -561,7 +570,7 @@ function ProductFormModal({
           </span>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
-            <Button size="sm" loading={saving} onClick={() => void save()}>
+            <Button size="sm" loading={saving} disabled={uploading} onClick={() => void save()}>
               {value.isNew ? 'Create product' : 'Save changes'}
             </Button>
           </div>
@@ -732,8 +741,10 @@ function ProductFormModal({
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
                     className="sr-only"
+                    disabled={uploading}
                     onChange={(e) => {
                       const file = e.target.files?.[0]
+                      e.currentTarget.value = ''
                       if (file) void uploadImage(file)
                     }}
                   />
