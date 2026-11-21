@@ -105,7 +105,7 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="nx-container py-8">
+    <div className="nx-container nx-game-product-detail py-8">
       <nav aria-label="Breadcrumb" className="mb-5 flex flex-wrap items-center gap-1.5 text-[12px] text-white/40">
         <Link to="/" className="transition hover:text-white">Home</Link>
         <ChevronRight className="h-3 w-3" aria-hidden />
@@ -123,7 +123,7 @@ export default function ProductDetailPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:gap-10">
         {/* media column */}
         <div>
-          <div className="overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-b from-white/[0.04] to-transparent p-3">
+          <div className="nx-game-product-media overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-b from-white/[0.04] to-transparent p-3">
             <ProductMedia
               name={product.name}
               brand={product.brand}
@@ -189,7 +189,7 @@ export default function ProductDetailPage() {
 
         {/* purchase column */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="nx-card p-5">
+          <div className="nx-card nx-game-product-buybox p-5">
             <div className="flex items-start justify-between gap-3">
               <span className="text-[10.5px] font-bold uppercase tracking-[0.16em] text-[#6EC1FF]">
                 {product.brand ?? 'Premium'}
