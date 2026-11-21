@@ -377,9 +377,9 @@ function PaymentPanel({
   onSubmitted: () => void
   toast: ReturnType<typeof Object>
 }) {
+  const [method, setMethod] = useState<PaymentMethod>(order.payment_method)
   const activeMethods = paymentMethods.filter((item) => item.is_active && item.payment_type === 'manual')
   const config = activeMethods.find((item) => item.method === method)
-  const [method, setMethod] = useState<PaymentMethod>(order.payment_method)
   const [trxId, setTrxId] = useState('')
   const [sender, setSender] = useState('')
   const [file, setFile] = useState<File | null>(null)
