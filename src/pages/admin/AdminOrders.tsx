@@ -79,6 +79,20 @@ export default function AdminOrders() {
     setDetailLoading(true)
     try {
       const detail = await api.admin.orderDetail(orderId)
+      if (detail.payment?.proof_url) {
+        try {
+          const signer = (api.admin as { paymentProofSignedUrl?: (path: string) => Promise<string> }).paymentProofSignedUrl
+          if (signer) {
+            detail.payment = {
+              ...detail.payment,
+              proof_url: await signer(detail.payment.proof_url),
+            }
+          }
+        } catch {
+          detail.payment = { ...detail.payment, proof_url: null }
+          toast.error('Payment proof unavailable', 'The file could not be securely opened. You can still review the payment details.')
+        }
+      }
       setActiveOrder(detail)
     } catch (err) {
       toast.error('Could not open order', err instanceof Error ? err.message : undefined)
