@@ -406,6 +406,14 @@ function notify(type: string, title: string, body: string, orderId: string) {
 }
 
 export const demoOrders = {
+  async offerStatus(): Promise<{ eligible: boolean; orders_used: number; orders_remaining: number }> {
+    await wait(120)
+    const user = currentUser()
+    if (!user) return { eligible: false, orders_used: 0, orders_remaining: 0 }
+    const used = state.orders.filter((o) => o.user_id === user.id && !['cancelled', 'refunded'].includes(o.status)).length
+    return { eligible: used < 3, orders_used: used, orders_remaining: Math.max(0, 3 - used) }
+  },
+
   async place(input: {
     items: { product_id: string; quantity: number }[]
     customer_name: string
