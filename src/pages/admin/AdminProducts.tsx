@@ -193,7 +193,7 @@ export default function AdminProducts() {
       ...filtered.map((product) => [product.name, product.slug, product.brand, product.original_price, product.discounted_price, product.availability, product.is_active, product.is_featured, product.new_user_offer_enabled]),
     ]
     const csv = rows.map((row) => row.map(quote).join(',')).join('\r\n')
-    const url = URL.createObjectURL(new Blob(['\\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }))
+    const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }))
     const anchor = document.createElement('a')
     anchor.href = url
     anchor.download = 'nexora-products.csv'
@@ -220,7 +220,7 @@ export default function AdminProducts() {
     if (!file) return
     if (file.size > 2 * 1024 * 1024) { toast.error('CSV must be smaller than 2 MB.'); return }
     const text = await file.text()
-    const lines = text.replace(/^\\uFEFF/, '').split(/\\r?\\n/).filter((line) => line.trim())
+    const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim())
     if (lines.length < 2) { toast.error('CSV has no product rows.'); return }
     const headers = parseCsvRow(lines[0]).map((header) => header.trim().toLowerCase())
     const required = ['slug', 'original_price', 'discounted_price']
