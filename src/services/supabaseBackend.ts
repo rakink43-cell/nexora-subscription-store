@@ -4,6 +4,7 @@
    client never inserts prices or statuses directly.
 --------------------------------------------------------------------------- */
 import { supabase } from '../lib/supabase'
+import { validateStoreImage } from '../lib/imageValidation'
 import type {
   Category,
   Coupon,
@@ -659,6 +660,7 @@ export const admin = {
   },
 
   async uploadProductImage(file: File): Promise<string> {
+    await validateStoreImage(file)
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
     if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext))
       throw new Error('Please upload a JPG, PNG or WEBP image.')
