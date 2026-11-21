@@ -17,7 +17,7 @@ export default function DashboardLayout() {
     <div className="nx-container nx-game-dashboard py-8">
       <div className="nx-game-dashboard-header mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-[#008CFF] to-[#F00016] text-sm font-bold text-white">
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-[#A855F7] to-[#EC4899] text-sm font-bold text-white">
             {initials(user?.full_name ?? user?.email ?? 'N')}
           </span>
           <div>
@@ -52,7 +52,7 @@ export default function DashboardLayout() {
                   cn(
                     'flex shrink-0 items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-medium transition',
                     isActive
-                      ? 'bg-[#008CFF]/15 text-[#6EC1FF]'
+                      ? 'bg-[#A855F7]/20 text-[#D8B4FE]'
                       : 'text-white/60 hover:bg-white/6 hover:text-white',
                   )
                 }
