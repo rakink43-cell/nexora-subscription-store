@@ -211,8 +211,10 @@ export default function AdminProducts() {
 
     // Validate every matched row before writing, avoiding silent skips and
     // preventing malformed CSV from partially changing the catalogue.
-    const allowedAvailability: Product['availability'][] = ['in_stock', 'limited', 'out_of_stock']
-    const prepared = matched.map(({ cells, product }) => {
+    let prepared: Array<{ product: Product; original: number; discounted: number; availability?: string; active?: string; featured?: string; brand?: string }> 
+    try {
+      const allowedAvailability: Product['availability'][] = ['in_stock', 'limited', 'out_of_stock']
+      prepared = matched.map(({ cells, product }) => {
       const original = Number(cells[index('original_price')])
       const discounted = Number(cells[index('discounted_price')])
       if (!Number.isFinite(original) || !Number.isFinite(discounted) || original < 0 || discounted < 0) {
@@ -236,7 +238,11 @@ export default function AdminProducts() {
         featured,
         brand: index('brand') >= 0 ? cells[index('brand')] : undefined,
       }
-    })
+      })
+    } catch (err) {
+      toast.error('CSV validation failed', err instanceof Error ? err.message : undefined)
+      return
+    }
     setBusy(true)
     let count = 0
     try {
