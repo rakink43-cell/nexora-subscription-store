@@ -81,6 +81,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           originalPrice: Number(product.original_price),
           quantity,
           availability: product.availability,
+          newUserOfferEnabled: Boolean(product.new_user_offer_enabled),
         },
       ]
     })
