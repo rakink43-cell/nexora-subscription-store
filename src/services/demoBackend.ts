@@ -727,6 +727,12 @@ export const demoAdmin = {
     }))
   },
 
+  async paymentProofSignedUrl(path: string): Promise<string> {
+    requireAdmin()
+    if (/^https?:\/\//i.test(path)) return path
+    throw new Error('Private payment proof links are available in the live Supabase backend.')
+  },
+
   async orderDetail(orderId: string) {
     requireAdmin()
     const order = state.orders.find((o) => o.id === orderId)
