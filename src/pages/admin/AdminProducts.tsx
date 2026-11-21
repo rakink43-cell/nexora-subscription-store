@@ -315,7 +315,13 @@ export default function AdminProducts() {
       toast.success('CSV import complete', count + ' product(s) updated by matching slug')
       await load()
     } catch (err) {
-      toast.error('CSV import stopped', err instanceof Error ? err.message : undefined)
+      const reason = err instanceof Error ? err.message : 'An unexpected error occurred.'
+      toast.error(
+        count > 0 ? 'CSV import partially completed' : 'CSV import stopped',
+        count > 0
+          ? `${count} product(s) were updated before the error. Please review the catalogue before retrying. ${reason}`
+          : reason,
+      )
       await load()
     } finally {
       setBusy(false)
