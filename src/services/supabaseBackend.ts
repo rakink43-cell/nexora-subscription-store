@@ -297,6 +297,12 @@ export const catalogue = {
 
 /* --------------------------------- orders --------------------------------- */
 export const orders = {
+  async offerStatus(): Promise<{ eligible: boolean; orders_used: number; orders_remaining: number }> {
+    const { data, error } = await sb().rpc('get_new_customer_offer_status')
+    if (error) fail(error, 'Could not check your new-customer offer.')
+    return data as { eligible: boolean; orders_used: number; orders_remaining: number }
+  },
+
   async place(input: {
     items: { product_id: string; quantity: number }[]
     customer_name: string
