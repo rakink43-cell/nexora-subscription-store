@@ -72,6 +72,7 @@ See [docs/SETUP.md](docs/SETUP.md) for current production operations and
 ## Validation scripts
 
 ```bash
+npm run verify:migrations
 npm run typecheck
 npm run build
 npm run db:test
