@@ -38,6 +38,18 @@ import {
 } from '../../lib/utils'
 import type { Order, OrderDetail, OrderStatus } from '../../types'
 
+function allowedNextStatuses(status: OrderStatus): OrderStatus[] {
+  switch (status) {
+    case 'pending_payment': return ['pending_payment', 'cancelled']
+    case 'payment_submitted': return ['payment_submitted', 'cancelled']
+    case 'payment_verified': return ['payment_verified', 'processing', 'refunded']
+    case 'processing': return ['processing', 'completed', 'refunded']
+    case 'completed': return ['completed', 'refunded']
+    case 'cancelled': return ['cancelled']
+    case 'refunded': return ['refunded']
+  }
+}
+
 export default function AdminOrders() {
   const [searchParams, setSearchParams] = useSearchParams()
   const toast = useToast()
@@ -531,7 +543,7 @@ function OrderManageModal({
               className="py-2 text-[12px]"
               aria-label="New order status"
             >
-              {ALL_ORDER_STATUSES.map((s) => (
+              {allowedNextStatuses(order.status).map((s) => (
                 <option key={s} value={s} className="bg-[#0B111D]">
                   {ORDER_STATUS_META[s].label}
                 </option>
