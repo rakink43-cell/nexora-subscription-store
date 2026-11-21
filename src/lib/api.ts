@@ -131,7 +131,7 @@ export const api = {
   /* ---- money paths: never fabricated while in setup mode ---- */
   orders: new Proxy({} as typeof demo.orders, {
     get(_t, prop: string) {
-      if (prop === 'get' || prop === 'mine') {
+      if (prop === 'get' || prop === 'mine' || prop === 'offerStatus') {
         // read-only lookups may fall back (demo orders live in this browser)
         return (readBackend().orders as unknown as Record<string, unknown>)[prop]
       }
