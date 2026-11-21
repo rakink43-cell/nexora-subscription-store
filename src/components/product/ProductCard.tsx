@@ -33,7 +33,7 @@ export function ProductCard({
 
   return (
     <article
-      className={cn('nx-card nx-card-hover group relative flex flex-col overflow-hidden', className)}
+      className={cn('nx-card nx-card-hover nx-game-product-card group relative flex flex-col overflow-hidden', className)}
     >
       <Link to={`/product/${product.slug}`} className="block p-3 pb-0" aria-label={product.name}>
         <div className="relative overflow-hidden rounded-lg">
