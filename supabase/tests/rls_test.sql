@@ -348,7 +348,7 @@ select tests.expect_error(
   'a second payment submission on the same order is rejected');
 
 -- A provider transaction reference cannot be reused across separate orders.
-do $
+do $$
 declare
   v_product uuid;
   v_result jsonb;
@@ -376,7 +376,7 @@ begin
   delete from public.payments where order_id = v_order_id;
   delete from public.order_items where order_id = v_order_id;
   delete from public.orders where id = v_order_id;
-end $;
+end $$;
 
 select tests.expect_error(
   'select public.admin_verify_payment(gen_random_uuid(), ''verified''::public.payment_status, null)',
@@ -440,7 +440,7 @@ select tests.expect_error(
   'guest cannot read an order with a wrong access token');
 
 -- Guest payment proof references a private object path scoped to this order.
-do $
+do $$
 declare
   v_order_no text := current_setting('nexora.test.guest_no');
   v_token uuid := current_setting('nexora.test.guest_token')::uuid;
@@ -464,7 +464,7 @@ begin
   perform tests.assert(
     (public.get_order(v_order_no, v_token) -> 'order' ->> 'status') = 'payment_submitted',
     'guest can submit payment with an order-scoped private proof path');
-end $;
+end $$;
 
 reset role;
 
