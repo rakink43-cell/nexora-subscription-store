@@ -58,6 +58,7 @@ export interface Product {
   duration: string
   original_price: number
   discounted_price: number
+  new_user_offer_enabled: boolean
   delivery_info: string | null
   delivery_time: string | null
   availability: Availability
