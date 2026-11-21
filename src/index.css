@@ -617,3 +617,26 @@ header.sticky nav a:hover, header.sticky nav button:hover { text-shadow:0 0 18px
 .nx-game-product-card button[aria-label*="Add"]:hover { border-color:#d75bff;background:linear-gradient(130deg,#b72cff,#7627d7);color:white;box-shadow:0 0 16px rgba(190,58,255,.32); }
 .nx-game-product-card button[aria-label*="is in your cart"] { border-color:rgba(52,220,164,.45);background:rgba(52,220,164,.12);color:#72f4c6; }
 @media(prefers-reduced-motion:reduce) { .nx-game-product-card,.nx-game-product-card:hover { transition:none;transform:none; } }
+
+/* Gameverse product detail page */
+.nx-game-product-detail { position:relative; }
+.nx-game-product-detail > nav { color:#c9b9e6; }
+.nx-game-product-detail > nav a:hover { color:#e7a8ff; }
+.nx-game-product-media { position:relative; border-color:rgba(187,81,255,.25); background:linear-gradient(145deg,rgba(49,22,78,.62),rgba(9,12,29,.96)); box-shadow:0 18px 48px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.04); }
+.nx-game-product-media::after { content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:radial-gradient(ellipse at 50% 0,rgba(194,61,255,.13),transparent 62%); }
+.nx-game-product-detail [aria-label="Product image gallery"] button { border-color:rgba(190,86,255,.22);background:#15112b;transition:transform .2s,border-color .2s,box-shadow .2s; }
+.nx-game-product-detail [aria-label="Product image gallery"] button:hover { transform:translateY(-2px);border-color:#d65cff;box-shadow:0 0 16px rgba(190,56,255,.2); }
+.nx-game-product-detail [aria-label="Product image gallery"] button[aria-pressed="true"] { border-color:#d65cff;box-shadow:0 0 0 1px #d65cff,0 0 18px rgba(190,56,255,.24);opacity:1; }
+.nx-game-product-detail .nx-game-product-buybox { border-color:rgba(192,76,255,.32);background:linear-gradient(155deg,rgba(33,20,59,.98),rgba(8,12,27,.98));box-shadow:0 22px 55px rgba(0,0,0,.32),0 0 28px rgba(143,41,255,.08); }
+.nx-game-product-buybox h1 { text-wrap:balance; }
+.nx-game-product-buybox > div:nth-of-type(3) { border-color:rgba(193,74,255,.22);background:linear-gradient(135deg,rgba(153,41,255,.12),rgba(9,12,29,.8)); }
+.nx-game-product-buybox .bg-\[\#F00016\] { background:linear-gradient(100deg,#ff438c,#bc20ef);box-shadow:0 0 14px rgba(222,47,255,.24); }
+.nx-game-product-buybox .nx-btn-primary { background:linear-gradient(100deg,#c51cff,#8425e6);box-shadow:0 10px 28px rgba(167,38,255,.3); }
+.nx-game-product-buybox .nx-btn-primary:hover:not(:disabled) { background:linear-gradient(100deg,#dc38ff,#963aff);box-shadow:0 14px 34px rgba(181,38,255,.42); }
+.nx-game-product-buybox .nx-btn-ghost { border-color:rgba(192,82,255,.3);background:rgba(137,43,211,.1); }
+.nx-game-product-buybox .nx-btn-ghost:hover:not(:disabled) { border-color:rgba(222,130,255,.65);background:rgba(151,45,232,.2); }
+.nx-game-product-detail .nx-card:not(.nx-game-product-buybox) { border-color:rgba(181,88,255,.16);background:linear-gradient(150deg,rgba(29,22,49,.92),rgba(9,13,27,.92)); }
+.nx-game-product-detail h2,.nx-game-product-detail h3 { color:#f8edff; }
+.nx-game-product-detail .text-\[\#6EC1FF\] { color:#d79aff; }
+@media(max-width:640px) { .nx-game-product-buybox { padding:16px; } .nx-game-product-detail .nx-game-product-media { padding:8px; } }
+@media(prefers-reduced-motion:reduce) { .nx-game-product-detail [aria-label="Product image gallery"] button { transition:none; } }
