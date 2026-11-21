@@ -529,3 +529,9 @@ header.sticky nav a:hover, header.sticky nav button:hover { text-shadow:0 0 18px
  .nx-reference-trust { gap:9px 12px; }
 }
 @media(prefers-reduced-motion:reduce) { .nx-reference-character,.nx-character-aura,.nx-character-spark { animation:none!important; } }
+
+/* Original NEXORA neon mascot artwork */
+.nx-reference-character { display:block; width:clamp(250px,39vw,470px); height:auto; aspect-ratio:auto; object-fit:contain; border:0; border-radius:0; background:transparent; box-shadow:none; filter:drop-shadow(0 22px 26px rgba(0,0,0,.38)) drop-shadow(0 0 28px rgba(202,63,255,.28)); animation:nx-reference-float 4.5s ease-in-out infinite; }
+.nx-reference-character-wrap { overflow:visible; }
+@media(max-width:700px) { .nx-reference-character { width:min(88vw,340px); } }
+@media(prefers-reduced-motion:reduce) { .nx-reference-character { animation:none!important; } }
