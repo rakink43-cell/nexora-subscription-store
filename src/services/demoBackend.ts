@@ -821,6 +821,7 @@ export const demoAdmin = {
         duration: input.duration ?? '1 Month',
         original_price: input.original_price ?? 0,
         discounted_price: input.discounted_price ?? 0,
+        new_user_offer_enabled: input.new_user_offer_enabled ?? false,
         delivery_info: input.delivery_info ?? 'Instant delivery after payment verification.',
         delivery_time: input.delivery_time ?? 'Within 30 minutes',
         availability: input.availability ?? 'in_stock',
