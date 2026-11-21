@@ -57,8 +57,8 @@ export function Hero() {
             <div className="nx-character-spark nx-spark-one">✦</div>
             <div className="nx-character-spark nx-spark-two">✧</div>
             <div className="nx-character-planet">◉</div>
-            <div className="nx-reference-character">{active.emoji}</div>
-            <div className="nx-character-caption"><Flame /> {active.tag}</div>
+            <img className="nx-reference-character" src="/mascot/nexora-arcade-mascot.svg" alt="" />
+            <div className="nx-character-caption"><Flame /> NEXORA GAMEVERSE</div>
           </div>
         </div>
 
