@@ -59,7 +59,7 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 nx-game-support">
       <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
