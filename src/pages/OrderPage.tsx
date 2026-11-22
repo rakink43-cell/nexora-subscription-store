@@ -390,6 +390,10 @@ function PaymentPanel({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    if (!activeMethods.some((item) => item.method === method)) {
+      setError('No active manual payment method is available for this order. Please contact support.')
+      return
+    }
     if (!isTrxId(trxId)) {
       setError('Enter the transaction ID from your payment confirmation (4–40 characters).')
       return
@@ -484,11 +488,13 @@ function PaymentPanel({
               onChange={(e) => setMethod(e.target.value as PaymentMethod)}
               className="text-[13px]"
             >
-              {(activeMethods.length ? activeMethods : (['bkash', 'nagad', 'bank_transfer'] as PaymentMethod[]).map((m) => ({ method: m, display_name: PAYMENT_METHOD_META[m].label }))).map((m) => (
-                <option key={m.method} value={m.method} className="bg-[#0B111D]">
-                  m.display_name
+              {activeMethods.length ? activeMethods.map((m) => (
+                <option key={m.method_key} value={m.method_key} className="bg-[#0B111D]">
+                  {m.display_name}
                 </option>
-              ))}
+              )) : (
+                <option value="" disabled>No active manual payment methods</option>
+              )}
             </Select>
           </Field>
           <Field
