@@ -172,6 +172,11 @@ test.describe('Guest checkout → manual payment → admin verification', () => 
     await expect(page.getByText('Pending Payment').first()).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Complete your payment' })).toBeVisible()
 
+    // Active payment methods must render actual labels, not a template literal.
+    const methodOptions = await page.getByLabel('Payment method').locator('option').allTextContents()
+    expect(methodOptions.length).toBeGreaterThan(0)
+    expect(methodOptions).not.toContain('m.display_name')
+
     // validation: bad trx id is rejected client-side
     await page.getByLabel('Transaction ID (TrxID)').fill('a')
     await page.getByRole('button', { name: /Submit payment/ }).click()
