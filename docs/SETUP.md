@@ -12,9 +12,9 @@ Last verified: 2026-11-22
 
 ## Database migrations
 
-There are 44 SQL migrations in `supabase/migrations/`. The full ordered SQL bundle is
+There are 45 SQL migrations in `supabase/migrations/`. The full ordered SQL bundle is
 `supabase/apply_all.sql`; it now includes every migration through
-`20261122185000_index_admin_password_setup_token_user_fk.sql`.
+`20261122191000_validate_payment_proof_object_exists.sql`.
 
 ### Existing production project
 
