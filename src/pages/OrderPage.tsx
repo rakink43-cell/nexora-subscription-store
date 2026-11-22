@@ -173,7 +173,7 @@ export default function OrderPage() {
               orderNumber={order.order_number}
               token={token}
               paymentMethods={paymentMethods}
-              canUploadProof={Boolean(user)}
+              canUploadProof={Boolean(user && order.user_id === user.id)}
               onSubmitted={() => load(true)}
               toast={toast}
             />
