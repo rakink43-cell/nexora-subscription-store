@@ -489,7 +489,7 @@ function PaymentPanel({
               className="text-[13px]"
             >
               {activeMethods.length ? activeMethods.map((m) => (
-                <option key={m.method_key} value={m.method_key} className="bg-[#0B111D]">
+                <option key={m.id} value={m.method} className="bg-[#0B111D]">
                   {m.display_name}
                 </option>
               )) : (
