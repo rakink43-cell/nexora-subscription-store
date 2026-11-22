@@ -173,6 +173,7 @@ export default function OrderPage() {
               orderNumber={order.order_number}
               token={token}
               paymentMethods={paymentMethods}
+              canUploadProof={Boolean(user)}
               onSubmitted={() => load(true)}
               toast={toast}
             />
@@ -367,6 +368,7 @@ function PaymentPanel({
   orderNumber,
   token,
   paymentMethods,
+  canUploadProof,
   onSubmitted,
   toast,
 }: {
@@ -374,6 +376,7 @@ function PaymentPanel({
   orderNumber: string
   token: string | null
   paymentMethods: PaymentMethodConfig[]
+  canUploadProof: boolean
   onSubmitted: () => void
   toast: ReturnType<typeof Object>
 }) {
@@ -521,37 +524,59 @@ function PaymentPanel({
               inputMode="tel"
             />
           </Field>
-          <Field label="Payment screenshot (optional)" htmlFor="proof" hint="JPG, PNG or PDF · max 5 MB">
-            <label
-              htmlFor="proof"
-              className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/15 bg-white/[0.02] px-3 py-2.5 text-[12px] text-white/50 transition hover:border-[#008CFF]/50 hover:text-white',
-              )}
-            >
-              <FileUp className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              <span className="truncate">{file ? file.name : 'Choose a file'}</span>
-              {file && (
-                <button
-                  type="button"
-                  onClick={(ev) => {
-                    ev.preventDefault()
+          {canUploadProof ? (
+            <Field label="Payment screenshot (optional)" htmlFor="proof" hint="JPG, PNG, WEBP or PDF · max 5 MB">
+              <label
+                htmlFor="proof"
+                className={cn(
+                  'flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-white/15 bg-white/[0.02] px-3 py-2.5 text-[12px] text-white/50 transition hover:border-[#008CFF]/50 hover:text-white',
+                )}
+              >
+                <FileUp className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                <span className="truncate">{file ? file.name : 'Choose a file'}</span>
+                {file && (
+                  <button
+                    type="button"
+                    onClick={(ev) => {
+                      ev.preventDefault()
+                      setFile(null)
+                    }}
+                    aria-label="Remove file"
+                    className="ml-auto rounded p-0.5 text-white/40 hover:text-rose-400"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </label>
+              <input
+                id="proof"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                className="sr-only"
+                onChange={(e) => {
+                  const selected = e.target.files?.[0] ?? null
+                  if (selected && selected.size > 5 * 1024 * 1024) {
                     setFile(null)
-                  }}
-                  aria-label="Remove file"
-                  className="ml-auto rounded p-0.5 text-white/40 hover:text-rose-400"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </label>
-            <input
-              id="proof"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              className="sr-only"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            />
-          </Field>
+                    setError('Payment proof must be 5 MB or smaller.')
+                    e.target.value = ''
+                    return
+                  }
+                  if (selected && !['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(selected.type)) {
+                    setFile(null)
+                    setError('Please choose a JPG, PNG, WEBP or PDF file.')
+                    e.target.value = ''
+                    return
+                  }
+                  setError(null)
+                  setFile(selected)
+                }}
+              />
+            </Field>
+          ) : (
+            <p className="rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2.5 text-[11.5px] leading-relaxed text-white/45">
+              Screenshot upload is available for signed-in customers only. You can still submit your transaction ID without a screenshot.
+            </p>
+          )}
         </div>
 
         {error && <ErrorNote message={error} />}
