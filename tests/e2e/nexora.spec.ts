@@ -442,6 +442,8 @@ test.describe('Order tracking for guests', () => {
     await page.getByLabel('Mobile number').fill('01912345678')
     await page.getByRole('button', { name: /Place Order/ }).click()
     await expect(page).toHaveURL(/\/order\/NX-/)
+    await expect(page.getByText(/Screenshot upload is available for signed-in customers only/)).toBeVisible()
+    await expect(page.locator('#proof')).toHaveCount(0)
 
     await page.goto('/track')
     await expect(page.getByRole('heading', { name: 'Track your order' })).toBeVisible()
