@@ -63,7 +63,7 @@ supabase db push
 ```
 
 A full SQL bundle is available at `supabase/apply_all.sql` for a brand-new disposable
-database. It contains all 44 migrations; run it once only. **Do not run it against the
+database. It contains all 45 migrations; run it once only. **Do not run it against the
 existing production project.**
 
 See [docs/SETUP.md](docs/SETUP.md) for current production operations and
