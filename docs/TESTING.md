@@ -10,8 +10,8 @@ was re-tested.
 
 | Command | What it proves | Latest status |
 |---|---|---|
-| `npm run verify:migrations` | Checks all 44 SQL migration files are present, ordered, and byte-matched in `apply_all.sql` | Passed in Cloudflare build |\n| `npm run typecheck` | TypeScript strict type checking | Not rerun in this batch |
-| `npm run build` | Production frontend bundle | Build with the migration verifier passed on commit `7be3d403`; latest documentation-only commits are being deployed |
+| `npm run verify:migrations` | Checks all 45 SQL migration files are present, ordered, and byte-matched in `apply_all.sql` | Passed in Cloudflare build |\n| `npm run typecheck` | TypeScript strict type checking | Not rerun in this batch |
+| `npm run build` | Production frontend bundle | Build with the migration verifier passed on commit `7be3d403`; latest commit adds payment-proof object existence validation; deployment status pending |
 | `npm run db:test` | SQL/RLS/business-logic assertions on disposable PostgreSQL | Not run in this batch; run locally only |
 | `npm run test:e2e` | Playwright UI flows | Not run in this batch |
 | `npm run verify:supabase` | Live project readiness and RLS probing | Live DB inspected manually; 1 profile and 0 orders, so full payment lifecycle is not testable yet |
@@ -90,10 +90,10 @@ These were real defects found by running the suite — not test-only edits.
 
 1. **SQL test block quoting was malformed.** Two payment regression blocks used `do $`
    / `end $;` instead of valid `do $$` / `end $$;`. Both blocks now use valid dollar quoting.
-2. **The full SQL bundle was stale.** `supabase/apply_all.sql` previously stopped at migration 0009
+3. **Payment proof path could point to a missing file.** A new database trigger now verifies that the order-scoped path exists in the private `payment-proofs` bucket before a payment can reference it. The trigger function has no direct execute grant for anon/authenticated users. The migration verifier was updated to include this 45th migration.\n\n2. **The full SQL bundle was stale.** `supabase/apply_all.sql` previously stopped at migration 0009
    while the repository had many later security, analytics, customer-block, and payment
-   hardening migrations. It now includes all 44 migration files in order, through the
-   latest admin password-token index migration.
+   hardening migrations. It now includes all 45 migration files in order, through the
+   latest payment-proof object validation migration.
 
 ---
 
