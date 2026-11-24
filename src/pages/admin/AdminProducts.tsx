@@ -653,7 +653,7 @@ function ProductFormModal({
     try {
       await validateStoreImage(file)
       if (!('uploadProductImage' in api.admin)) {
-        throw new Error('Image upload requires a connected Supabase project.')
+        throw new Error('Image upload is unavailable in this build. Ensure Cloudflare Pages Production has VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY configured, then redeploy.')
       }
       const url = await (api.admin as { uploadProductImage: (f: File) => Promise<string> }).uploadProductImage(file)
       set('image_url', url)
@@ -766,7 +766,7 @@ function ProductFormModal({
           />
         </Field>
 
-        <Field label="Additional gallery images" className="sm:col-span-2" hint="Upload multiple images or paste one image URL per line. Maximum 4 MB per image.">
+        <Field label="Additional gallery images" className="sm:col-span-2" hint="Select images from your device. JPG, PNG or WEBP; maximum 4 MB per image.">
           <Textarea
             value={(form.gallery ?? []).join('\n')}
             onChange={(e) => set('gallery', e.target.value.split('\n').map((url) => url.trim()).filter(Boolean))}
@@ -797,7 +797,7 @@ function ProductFormModal({
                   setUploading(true)
                   try {
                     const uploader = (api.admin as { uploadProductImage?: (f: File) => Promise<string> }).uploadProductImage
-                    if (!uploader) throw new Error('Image upload requires a connected Supabase project.')
+                    if (!uploader) throw new Error('Image upload is unavailable in this build. Ensure Cloudflare Pages Production has VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY configured, then redeploy.')
                     // Validate the full selection before starting uploads.
                     for (const file of files) await validateStoreImage(file)
                     const urls: string[] = []
@@ -855,7 +855,7 @@ function ProductFormModal({
 
         <div className="sm:col-span-2">
           <label className="nx-label">Product image</label>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2.5">
             <div className="grid h-16 w-20 shrink-0 place-items-center overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-[#0B63C5] to-[#071B33] text-[10px] font-bold text-white">
               {form.image_url ? (
                 <img src={form.image_url} alt="" className="h-full w-full object-cover" />
@@ -863,17 +863,11 @@ function ProductFormModal({
                 <ImagePlus className="h-5 w-5 text-white/50" aria-hidden />
               )}
             </div>
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <Input
-                value={form.image_url ?? ''}
-                onChange={(e) => set('image_url', e.target.value)}
-                placeholder="https://… or upload a file"
-                className="text-[12px]"
-              />
-              <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="nx-btn nx-btn-ghost cursor-pointer px-2.5 py-1.5 text-[11.5px]">
                   <Upload className="h-3 w-3" aria-hidden />
-                  {uploading ? 'Uploading…' : 'Upload image'}
+                  {uploading ? 'Uploading…' : form.image_url ? 'Replace image' : 'Upload image'}
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
@@ -896,11 +890,11 @@ function ProductFormModal({
                   </button>
                 )}
               </div>
+              <p className="mt-1.5 text-[10.5px] text-white/30">
+                JPG, PNG or WEBP · Maximum 4 MB. Select a file to upload directly to NEXORA storage.
+              </p>
             </div>
           </div>
-          <p className="mt-1.5 text-[10.5px] text-white/30">
-            No image? NEXORA renders a premium brand tile automatically — nothing breaks.
-          </p>
         </div>
 
         <div className="flex flex-wrap gap-4 sm:col-span-2">
