@@ -129,4 +129,23 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await expect(launchButton).toBeFocused()
   })
 
+
+  test('music preview switches themes and stops cleanly', async ({ page }) => {
+    await page.goto('/games')
+
+    const selector = page.getByRole('combobox', { name: 'Select game music' })
+    await expect(selector.locator('option')).toHaveCount(20)
+    await selector.selectOption({ label: 'Shadow Escape' })
+
+    await page.getByRole('button', { name: 'Play music' }).click()
+    await expect(page.locator('[aria-live="polite"]')).toContainText('Music playing', { timeout: 5_000 })
+
+    await selector.selectOption({ label: 'Tower Guard' })
+    await expect(page.locator('[aria-live="polite"]')).toContainText('Music playing', { timeout: 5_000 })
+
+    await page.getByRole('button', { name: 'Stop music' }).click()
+    await expect(page.getByRole('button', { name: 'Play music' })).toBeVisible()
+    await expect(page.locator('[aria-live="polite"]')).toBeEmpty()
+  })
+
 })
