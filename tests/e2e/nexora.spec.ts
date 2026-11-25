@@ -107,6 +107,34 @@ test.describe('Storefront', () => {
     await expect(page.getByText('2 items in your cart')).toBeVisible()
   })
 
+  test('restores only valid cart lines and clamps saved quantities', async ({ page }) => {
+    await clearStorage(page)
+    await page.evaluate(() => {
+      localStorage.setItem('nexora.cart.v1', JSON.stringify([
+        {
+          productId: 'restored-product',
+          slug: 'restored-product',
+          name: 'Restored product',
+          image_url: null,
+          brand: null,
+          duration: '1 month',
+          unitPrice: 50,
+          originalPrice: 100,
+          quantity: 99,
+          availability: 'in_stock',
+        },
+        { productId: '', name: 'Invalid line', unitPrice: 10, originalPrice: 10, quantity: 1 },
+        { productId: 'bad-price', name: 'Invalid price', unitPrice: 'free', originalPrice: 10, quantity: 1 },
+      ]))
+    })
+    await page.reload()
+    await expect(page.getByText('20 items in your cart')).toBeVisible()
+    await expect(page.getByText('Restored product')).toBeVisible()
+    await expect(page.getByText('Invalid line')).toHaveCount(0)
+    await expect(page.getByText('Invalid price')).toHaveCount(0)
+    await expect(page.getByText('৳1,000').first()).toBeVisible()
+  })
+
   test('empty cart has an attractive empty state', async ({ page }) => {
     await page.goto('/cart')
     await expect(page.getByText('Your cart is empty')).toBeVisible()
