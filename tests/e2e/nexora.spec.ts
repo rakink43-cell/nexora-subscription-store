@@ -391,6 +391,42 @@ test.describe('Admin panel', () => {
   })
 })
 
+test.describe('NEXORA Arcade', () => {
+  test('Neon Memory restarts a missed pattern without carrying tile progress', async ({ page }) => {
+    await clearStorage(page)
+    await page.goto('/games')
+    await expect(page.getByRole('heading', { name: /NEXORA ARCADE/i })).toBeVisible()
+
+    await page.getByRole('button', { name: /Play demo/i }).click()
+    const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: 'Start round' }).click()
+
+    // Capture the lit tile while the pattern is shown, then deliberately tap
+    // a different tile once input is enabled.
+    const tiles = dialog.getByRole('button', { name: /^Tile [1-9]$/ })
+    await expect.poll(async () => {
+      for (let i = 0; i < 9; i += 1) {
+        if ((await tiles.nth(i).getAttribute('class'))?.includes('bg-fuchsia-300')) return i
+      }
+      return -1
+    }, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
+    let litTile = -1
+    for (let i = 0; i < 9; i += 1) {
+      if ((await tiles.nth(i).getAttribute('class'))?.includes('bg-fuchsia-300')) {
+        litTile = i
+        break
+      }
+    }
+    expect(litTile).toBeGreaterThanOrEqual(0)
+
+    await expect(tiles.nth(0)).toBeEnabled({ timeout: 5_000 })
+    await tiles.nth((litTile + 1) % 9).click()
+    await expect(dialog.getByText('Pattern missed. Press Try again to replay this round.')).toBeVisible()
+    await expect(dialog.getByText('Round 1 / 10 · 0 / 1 correct tiles')).toBeVisible()
+  })
+})
+
 test.describe('Responsive layout', () => {
   const viewports = [
     { name: 'Android phone', width: 390, height: 844 },
