@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight, Gamepad2, Ghost, Shield, Rocket, Car, Puzzle,
@@ -128,6 +128,10 @@ export default function GamesPage() {
   const [activeGame, setActiveGame] = useState<Game | null>(null)
   const [musicIndex, setMusicIndex] = useState(0)
   const [musicPlaying, setMusicPlaying] = useState(false)
+  const closeActiveGame = useCallback(() => {
+    setActiveGame(null)
+    setMusicPlaying(false)
+  }, [])
   const games = useMemo(() => GAMES.filter((g) => {
     if (catalogSlugs !== null && !catalogSlugs.includes(g.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))) return false
     if (filter === 'All Games') return true
@@ -183,7 +187,7 @@ export default function GamesPage() {
         </div>
       </section>
       <section className="mt-8 rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] p-4 text-xs leading-5 text-amber-100/60"><p className="font-semibold text-amber-100/80">Reward status</p>First-login coins are stored in your account wallet. Level rewards remain disabled until each game can verify its completed level server-side. Practice mode does not award coins.</section>
-      {activeGame && <MemoryGame game={activeGame} onClose={() => { setActiveGame(null); setMusicPlaying(false) }} loggedIn={Boolean(user)}/>}
+      {activeGame && <MemoryGame game={activeGame} onClose={closeActiveGame} loggedIn={Boolean(user)}/>}
     </div>
   )
 }
@@ -195,6 +199,18 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
   const [phase, setPhase] = useState<'ready' | 'show' | 'input' | 'done'>('ready')
   const [flash, setFlash] = useState(-1)
   const [message, setMessage] = useState('Press Start to watch the pattern.')
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
   useEffect(() => {
     if (phase !== 'show') return
     const timers: ReturnType<typeof setTimeout>[] = []
