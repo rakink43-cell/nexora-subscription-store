@@ -60,6 +60,34 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     }
   })
 
+  test('tiles and keyboard input stay locked while the pattern is playing', async ({ page }) => {
+    await page.goto('/games')
+    await page.getByRole('button', { name: /Play demo/i }).click()
+    const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    const tiles = dialog.getByRole('button', { name: /^Tile [1-9]$/ })
+
+    await dialog.getByRole('button', { name: 'Start round' }).click()
+    await expect(dialog.getByText('Watch carefully…')).toBeVisible()
+    for (let i = 0; i < 9; i += 1) {
+      await expect(tiles.nth(i)).toBeDisabled()
+    }
+
+    await dialog.focus()
+    await dialog.press('1')
+    await expect(dialog.getByText('Round 1 / 10 · 0 / 1 correct tiles')).toBeVisible()
+
+    await expect.poll(async () => {
+      for (let i = 0; i < 9; i += 1) {
+        if (await tiles.nth(i).isEnabled()) return true
+      }
+      return false
+    }, { timeout: 5_000 }).toBe(true)
+    for (let i = 0; i < 9; i += 1) {
+      await expect(tiles.nth(i)).toBeEnabled()
+    }
+    await expect(dialog.getByText('Your turn! Repeat the pattern.')).toBeVisible()
+  })
+
   test('held keyboard keys do not repeat a tile input', async ({ page }) => {
     await page.goto('/games')
     await page.getByRole('button', { name: /Play demo/i }).click()
