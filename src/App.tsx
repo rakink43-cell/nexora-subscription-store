@@ -49,6 +49,7 @@ const AdminContent = lazy(() => import('./pages/admin/AdminContent'))
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 const AdminSupport = lazy(() => import('./pages/admin/AdminSupport'))
 const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'))
+const AdminArcade = lazy(() => import('./pages/admin/AdminArcade'))
 
 function PageViewTracker() {
   const { pathname } = useLocation()
@@ -230,6 +231,10 @@ export default function App() {
                           <AdminSupport />
                         </Suspense>
                       }
+                    />
+                    <Route
+                      path="arcade"
+                      element={<Suspense fallback={<PageFallback />}><AdminArcade /></Suspense>}
                     />
                     <Route
                       path="settings"
