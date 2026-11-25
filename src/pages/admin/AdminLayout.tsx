@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3,
+  Gamepad2,
   Bell,
   ChevronLeft,
   LayoutDashboard,
@@ -55,6 +56,7 @@ const NAV: { section: string; items: { to: string; label: string; icon: typeof L
       { to: '/admin/homepage', label: 'Homepage editor', icon: LayoutTemplate },
       { to: '/admin/promotions', label: 'Promotions', icon: Sparkles },
       { to: '/admin/content', label: 'Content & FAQ', icon: MessageSquareQuote },
+      { to: '/admin/arcade', label: 'Games & Rewards', icon: Gamepad2 },
       { to: '/admin/settings', label: 'Settings', icon: Settings },
     ],
   },
