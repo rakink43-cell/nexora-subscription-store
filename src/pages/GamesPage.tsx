@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowRight, Gamepad2, Ghost, Shield, Rocket, Car, Puzzle,
+  ArrowRight, Gamepad2, Ghost, Shield, Rocket, Car, Puzzle,
   Sword, Mountain, Trophy, Coins, LockKeyhole, Play, X, Sparkles,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
