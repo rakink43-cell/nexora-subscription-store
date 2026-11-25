@@ -150,4 +150,23 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await expect(page.locator('[aria-live="polite"]')).toBeEmpty()
   })
 
+
+  test('Close game button restores page and stops game music', async ({ page }) => {
+    await page.goto('/games')
+    const launchButton = page.getByRole('button', { name: /Play demo/i })
+    await launchButton.click()
+
+    const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    await expect(dialog).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Stop music' })).toBeVisible()
+    await expect(page.locator('[aria-live="polite"]')).toContainText('Music playing', { timeout: 5_000 })
+
+    await dialog.getByRole('button', { name: 'Close game' }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Play music' })).toBeVisible()
+    await expect(page.locator('[aria-live="polite"]')).toBeEmpty()
+    await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden')
+    await expect(launchButton).toBeFocused()
+  })
+
 })
