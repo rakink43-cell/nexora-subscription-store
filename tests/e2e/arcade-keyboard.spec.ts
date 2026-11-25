@@ -58,6 +58,20 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await expect(dialog.getByRole('button', { name: 'Try again' })).toBeEnabled()
   })
 
+  test('Reset cancels the current pattern and returns to a clean first round', async ({ page }) => {
+    await page.goto('/games')
+    await page.getByRole('button', { name: /Play demo/i }).click()
+    const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    await dialog.getByRole('button', { name: 'Start round' }).click()
+    await expect(dialog.getByText('Round 1 / 10 · 0 / 1 correct tiles')).toBeVisible()
+
+    await dialog.getByRole('button', { name: 'Reset' }).click()
+    await expect(dialog.getByText('Round 1 / 10 · 0 / 1 correct tiles')).toBeVisible()
+    await expect(dialog.getByText('Press Start to watch the pattern.')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Start round' })).toBeEnabled()
+    await expect(dialog.getByRole('button', { name: /^Tile [1-9]$/ }).first()).toBeDisabled()
+  })
+
   test('Escape closes the game, restores focus and stops its music', async ({ page }) => {
     await page.goto('/games')
     const launchButton = page.getByRole('button', { name: /Play demo/i })
