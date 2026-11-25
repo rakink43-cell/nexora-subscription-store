@@ -213,4 +213,30 @@ test.describe('NEXORA Arcade keyboard controls', () => {
   })
 
 
+  test('closing during pattern playback cancels pending game timers', async ({ page }) => {
+    await page.goto('/games')
+    const launchButton = page.getByRole('button', { name: /Play demo/i })
+    await launchButton.click()
+
+    let dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    await dialog.getByRole('button', { name: 'Start round' }).click()
+    await expect(dialog.getByText('Watch carefully…')).toBeVisible()
+
+    await dialog.getByRole('button', { name: 'Close game' }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden')
+
+    await launchButton.click()
+    dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    await expect(dialog.getByText('Press Start to watch the pattern.')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Start round' })).toBeEnabled()
+    await expect(dialog.getByRole('button', { name: /^Tile [1-9]$/ }).first()).toBeDisabled()
+
+    // Any timers from the unmounted game must not advance the reopened game.
+    await page.waitForTimeout(1_200)
+    await expect(dialog.getByText('Press Start to watch the pattern.')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: /^Tile [1-9]$/ }).first()).toBeDisabled()
+  })
+
+
 })
