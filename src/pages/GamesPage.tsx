@@ -63,7 +63,14 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: {
     const theme = MUSIC_THEMES[themeIndex]
     const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AudioCtor) { setPlaying(false); return }
-    const ctx = new AudioCtor()
+    let ctx: AudioContext
+    try {
+      ctx = new AudioCtor()
+    } catch {
+      setPlaying(false)
+      return
+    }
+    let disposed = false
     const master = ctx.createGain()
     master.gain.value = 0.055
     master.connect(ctx.destination)
@@ -97,17 +104,25 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: {
       step += 1
     }
     const resumeAudio = () => {
-      if (document.visibilityState === 'visible') void ctx.resume()
-      else void ctx.suspend()
+      if (document.visibilityState !== 'visible') {
+        void ctx.suspend().catch(() => undefined)
+        return
+      }
+      void ctx.resume().catch(() => {
+        if (!disposed) setPlaying(false)
+      })
     }
     document.addEventListener('visibilitychange', resumeAudio)
-    void ctx.resume()
+    void ctx.resume().catch(() => {
+      if (!disposed) setPlaying(false)
+    })
     playNote()
     const timer = window.setInterval(playNote, beatMs)
     return () => {
+      disposed = true
       window.clearInterval(timer)
       document.removeEventListener('visibilitychange', resumeAudio)
-      void ctx.close()
+      void ctx.close().catch(() => undefined)
     }
   }, [playing, themeIndex])
   return <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-fuchsia-400/15 bg-fuchsia-500/[0.04] p-4">
