@@ -34,6 +34,12 @@ const GAMES: Game[] = [
 
 const FILTERS = ['All Games', 'Action', 'Adventure', 'Horror', 'Simulator', 'Puzzle']
 
+const gameSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const musicIndexForGame = (game: Game) => {
+  const index = MUSIC_THEMES.findIndex((theme) => theme.slug === gameSlug(game.title))
+  return index >= 0 ? index : 0
+}
+
 const MUSIC_THEMES = [
   { slug: 'neon-memory', name: 'Neon Memory', bpm: 92, root: 220, scale: [0, 3, 7, 10, 12, 15, 19], wave: 'sine' as OscillatorType },
   { slug: 'shadow-escape', name: 'Shadow Escape', bpm: 68, root: 110, scale: [0, 2, 3, 7, 8, 12], wave: 'triangle' as OscillatorType },
@@ -144,11 +150,18 @@ export default function GamesPage() {
       .then(({ data, error }) => { if (active) setCatalogSlugs(error ? null : (data ?? []).map((row) => row.slug)) })
     return () => { active = false }
   }, [])
+  const [walletStatus, setWalletStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   useEffect(() => {
-    if (!user || !supabase) { setCoinBalance(null); return }
+    if (!user || !supabase) { setCoinBalance(null); setWalletStatus('error'); return }
     let active = true
+    setWalletStatus('loading')
     supabase.from('arcade_wallets').select('coin_balance').eq('user_id', user.id).maybeSingle()
-      .then(({ data, error }) => { if (active && !error) setCoinBalance(Number(data?.coin_balance ?? 0)) })
+      .then(({ data, error }) => {
+        if (!active) return
+        if (error) { setCoinBalance(null); setWalletStatus('error'); return }
+        setCoinBalance(Number(data?.coin_balance ?? 0))
+        setWalletStatus('ready')
+      })
     return () => { active = false }
   }, [user])
   const [activeGame, setActiveGame] = useState<Game | null>(null)
@@ -159,7 +172,7 @@ export default function GamesPage() {
     setMusicPlaying(false)
   }, [])
   const games = useMemo(() => GAMES.filter((g) => {
-    if (catalogSlugs !== null && !catalogSlugs.includes(g.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))) return false
+    if (catalogSlugs !== null && !catalogSlugs.includes(gameSlug(g.title))) return false
     if (filter === 'All Games') return true
     if (filter === 'Simulator') return /sim/i.test(g.genre)
     if (filter === 'Puzzle') return /puzzle|brain|logic/i.test(g.genre)
@@ -188,7 +201,7 @@ export default function GamesPage() {
         </div>
       </section>
 
-      {user && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/[0.06] p-4"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/15 text-violet-200"><Coins className="h-5 w-5"/></div><div><p className="text-xs text-white/45">Your Arcade Coins</p><p className="text-xl font-bold text-white">{coinBalance === null ? "Loading…" : coinBalance.toLocaleString()}</p></div></div><p className="max-w-sm text-xs leading-5 text-white/45">Welcome reward: 10 coins once per account. Level rewards are being secured before activation.</p></div>}
+      {user && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/[0.06] p-4"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/15 text-violet-200"><Coins className="h-5 w-5"/></div><div><p className="text-xs text-white/45">Your Arcade Coins</p><p className="text-xl font-bold text-white">{walletStatus === 'loading' ? "Loading…" : walletStatus === 'error' || coinBalance === null ? "Unavailable" : coinBalance.toLocaleString()}</p><p aria-live="polite" className="mt-1 text-[10px] text-white/35">{walletStatus === 'error' ? 'Wallet balance could not be loaded. Please refresh or sign in again.' : walletStatus === 'loading' ? 'Checking your wallet…' : 'Balance updated'}</p></div></div><p className="max-w-sm text-xs leading-5 text-white/45">Welcome reward: 10 coins once per account. Level rewards are being secured before activation.</p></div>}
       <ArcadeMusicPlayer themeIndex={musicIndex} setThemeIndex={setMusicIndex} playing={musicPlaying} setPlaying={setMusicPlaying} />
       <section id="game-library" className="mt-10 scroll-mt-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -206,7 +219,7 @@ export default function GamesPage() {
                 <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold ${game.status === 'playable' ? 'bg-emerald-400/15 text-emerald-200' : 'bg-white/10 text-white/50'}`}>{game.status === 'playable' ? 'PLAYABLE' : 'COMING SOON'}</span>
               </div>
               <div className="p-4"><h3 className="font-display text-base font-bold text-white">{String(game.id).padStart(2, '0')} · {game.title}</h3><p className="mt-1.5 min-h-10 text-xs leading-5 text-white/45">{game.description}</p>
-                <button disabled={game.status !== 'playable'} onClick={() => { setMusicIndex(game.id - 1); setMusicPlaying(true); setActiveGame(game) }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-violet-400/20 bg-violet-500/10 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-violet-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200 disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-white/[0.02] disabled:text-white/30">{game.status === 'playable' ? <><Play className="h-3.5 w-3.5"/> Play demo</> : <><LockKeyhole className="h-3.5 w-3.5"/> In development</>}</button>
+                <button disabled={game.status !== 'playable'} onClick={() => { setMusicIndex(musicIndexForGame(game)); setMusicPlaying(true); setActiveGame(game) }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-violet-400/20 bg-violet-500/10 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-violet-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200 disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-white/[0.02] disabled:text-white/30">{game.status === 'playable' ? <><Play className="h-3.5 w-3.5"/> Play demo</> : <><LockKeyhole className="h-3.5 w-3.5"/> In development</>}</button>
               </div>
             </article>
           })}
