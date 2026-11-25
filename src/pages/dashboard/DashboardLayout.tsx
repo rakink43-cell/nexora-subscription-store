@@ -1,11 +1,12 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
-import { LayoutDashboard, LifeBuoy, Package, ShoppingBag, User } from 'lucide-react'
+import { Gamepad2, LayoutDashboard, LifeBuoy, Package, ShoppingBag, User } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { cn, initials } from '../../lib/utils'
 
 const NAV = [
   { to: '/dashboard', label: 'Overview', icon: LayoutDashboard, end: true },
   { to: '/dashboard/orders', label: 'My Orders', icon: Package },
+  { to: '/games', label: 'Arcade Games', icon: Gamepad2 },
   { to: '/dashboard/profile', label: 'Profile', icon: User },
   { to: '/dashboard/support', label: 'Support', icon: LifeBuoy },
 ]
