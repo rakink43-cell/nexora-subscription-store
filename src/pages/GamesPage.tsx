@@ -57,9 +57,7 @@ const MUSIC_THEMES = [
   { slug: 'logic-lab', name: 'Logic Lab', bpm: 86, root: 207.65, scale: [0, 2, 4, 6, 7, 9, 11, 12], wave: 'sine' as OscillatorType },
 ]
 
-function ArcadeMusicPlayer() {
-  const [themeIndex, setThemeIndex] = useState(0)
-  const [playing, setPlaying] = useState(false)
+function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: { themeIndex: number; setThemeIndex: (index: number) => void; playing: boolean; setPlaying: (playing: boolean) => void }) {
   useEffect(() => {
     if (!playing) return
     const theme = MUSIC_THEMES[themeIndex]
@@ -128,6 +126,8 @@ export default function GamesPage() {
     return () => { active = false }
   }, [user])
   const [activeGame, setActiveGame] = useState<Game | null>(null)
+  const [musicIndex, setMusicIndex] = useState(0)
+  const [musicPlaying, setMusicPlaying] = useState(false)
   const games = useMemo(() => GAMES.filter((g) => {
     if (catalogSlugs !== null && !catalogSlugs.includes(g.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))) return false
     if (filter === 'All Games') return true
@@ -159,7 +159,7 @@ export default function GamesPage() {
       </section>
 
       {user && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/[0.06] p-4"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/15 text-violet-200"><Coins className="h-5 w-5"/></div><div><p className="text-xs text-white/45">Your Arcade Coins</p><p className="text-xl font-bold text-white">{coinBalance === null ? "Loading…" : coinBalance.toLocaleString()}</p></div></div><p className="max-w-sm text-xs leading-5 text-white/45">Welcome reward: 10 coins once per account. Level rewards are being secured before activation.</p></div>}
-      <ArcadeMusicPlayer />
+      <ArcadeMusicPlayer themeIndex={musicIndex} setThemeIndex={setMusicIndex} playing={musicPlaying} setPlaying={setMusicPlaying} />
       <section id="game-library" className="mt-10 scroll-mt-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Game library</p><h2 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">Choose your next challenge</h2><p className="mt-2 text-sm text-white/45">{games.length} games currently visible · 20 game concepts in the catalogue</p></div>
@@ -176,7 +176,7 @@ export default function GamesPage() {
                 <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold ${game.status === 'playable' ? 'bg-emerald-400/15 text-emerald-200' : 'bg-white/10 text-white/50'}`}>{game.status === 'playable' ? 'PLAYABLE' : 'COMING SOON'}</span>
               </div>
               <div className="p-4"><h3 className="font-display text-base font-bold text-white">{String(game.id).padStart(2, '0')} · {game.title}</h3><p className="mt-1.5 min-h-10 text-xs leading-5 text-white/45">{game.description}</p>
-                <button disabled={game.status !== 'playable'} onClick={() => setActiveGame(game)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-violet-400/20 bg-violet-500/10 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-white/[0.02] disabled:text-white/30">{game.status === 'playable' ? <><Play className="h-3.5 w-3.5"/> Play demo</> : <><LockKeyhole className="h-3.5 w-3.5"/> In development</>}</button>
+                <button disabled={game.status !== 'playable'} onClick={() => { setMusicIndex(game.id - 1); setMusicPlaying(true); setActiveGame(game) }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-violet-400/20 bg-violet-500/10 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-white/[0.02] disabled:text-white/30">{game.status === 'playable' ? <><Play className="h-3.5 w-3.5"/> Play demo</> : <><LockKeyhole className="h-3.5 w-3.5"/> In development</>}</button>
               </div>
             </article>
           })}
