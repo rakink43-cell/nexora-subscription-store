@@ -6,7 +6,7 @@
 
 DROP POLICY IF EXISTS "arcade progress: owner update" ON public.arcade_game_progress;
 
-REVOKE INSERT, UPDATE, DELETE ON public.arcade_game_progress FROM anon, authenticated;
+REVOKE INSERT, UPDATE, DELETE ON public.arcade_game_progress FROM PUBLIC, anon, authenticated;
 
 -- Keep progress read-only to clients. Future verified game RPCs can write using
 -- SECURITY DEFINER after validating the game session and completion server-side.
