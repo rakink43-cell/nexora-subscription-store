@@ -38,6 +38,14 @@ export default function GamesPage() {
   const { user } = useAuth()
   const [filter, setFilter] = useState('All Games')
   const [coinBalance, setCoinBalance] = useState<number | null>(null)
+  const [catalogSlugs, setCatalogSlugs] = useState<string[] | null>(null)
+  useEffect(() => {
+    if (!supabase) return
+    let active = true
+    supabase.from('arcade_games').select('slug').eq('is_active', true).order('sort_order')
+      .then(({ data, error }) => { if (active) setCatalogSlugs(error ? null : (data ?? []).map((row) => row.slug)) })
+    return () => { active = false }
+  }, [])
   useEffect(() => {
     if (!user || !supabase) { setCoinBalance(null); return }
     let active = true
@@ -47,11 +55,12 @@ export default function GamesPage() {
   }, [user])
   const [activeGame, setActiveGame] = useState<Game | null>(null)
   const games = useMemo(() => GAMES.filter((g) => {
+    if (catalogSlugs !== null && !catalogSlugs.includes(g.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))) return false
     if (filter === 'All Games') return true
     if (filter === 'Simulator') return /sim/i.test(g.genre)
     if (filter === 'Puzzle') return /puzzle|brain|logic/i.test(g.genre)
     return g.genre.toLowerCase().includes(filter.toLowerCase())
-  }), [filter])
+  }), [filter, catalogSlugs])
 
   return (
     <div className="nx-container py-8 sm:py-12">
@@ -78,7 +87,7 @@ export default function GamesPage() {
       {user && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/[0.06] p-4"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/15 text-violet-200"><Coins className="h-5 w-5"/></div><div><p className="text-xs text-white/45">Your Arcade Coins</p><p className="text-xl font-bold text-white">{coinBalance === null ? "Loading…" : coinBalance.toLocaleString()}</p></div></div><p className="max-w-sm text-xs leading-5 text-white/45">Welcome reward: 10 coins once per account. Level rewards are being secured before activation.</p></div>}
       <section id="game-library" className="mt-10 scroll-mt-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Game library</p><h2 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">Choose your next challenge</h2><p className="mt-2 text-sm text-white/45">{GAMES.length} different game concepts · Responsive controls planned</p></div>
+          <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Game library</p><h2 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">Choose your next challenge</h2><p className="mt-2 text-sm text-white/45">{games.length} games currently visible · 20 game concepts in the catalogue</p></div>
           <div className="flex flex-wrap gap-1.5">{FILTERS.map((f) => <button key={f} onClick={() => setFilter(f)} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${filter === f ? 'border-violet-400/40 bg-violet-500/20 text-violet-200' : 'border-white/10 bg-white/[0.03] text-white/50 hover:text-white'}`}>{f}</button>)}</div>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -164,7 +173,7 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
       <div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-violet-300">Practice mini-game</p><h2 className="mt-1 text-xl font-bold text-white">{game.title}</h2></div><button onClick={onClose} aria-label="Close game" className="rounded-lg p-2 text-white/50 hover:bg-white/5"><X className="h-4 w-4"/></button></div>
       <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.03] p-3 text-center"><p className="text-xs text-white/55">Round {round} / 10</p><p className="mt-1 min-h-5 text-sm text-violet-200">{message}</p></div>
       <div className="mx-auto mt-4 grid max-w-[280px] grid-cols-3 gap-2">{Array.from({length:9},(_,n)=><button key={n} aria-label={`Tile ${n+1}`} onClick={()=>tap(n)} disabled={phase !== 'input'} className={`aspect-square rounded-xl border transition duration-150 ${flash === n ? 'scale-95 border-fuchsia-200 bg-fuchsia-300 shadow-[0_0_28px_rgba(232,121,249,.8)]' : phase === 'input' ? 'border-violet-300/25 bg-violet-500/15 hover:bg-violet-500/35 active:scale-95' : 'border-white/5 bg-white/[0.02]'}`}/>)}</div>
-      <div className="mt-4 flex gap-2"><button disabled={phase === 'show' || phase === 'input'} onClick={()=>{setInput([]);setPhase('show');setMessage('Watch carefully…')}} className="nx-btn nx-btn-primary flex-1 justify-center py-2.5 disabled:opacity-50"><Play className="h-3.5 w-3.5"/> {phase === 'done' ? 'Play again' : phase === 'ready' ? (round === 1 && input.length === 0 ? 'Start round' : 'Try again') : 'Showing pattern…'}</button><button onClick={phase === 'done' ? reset : reset} className="nx-btn nx-btn-ghost px-4 py-2.5">Reset</button></div>
+      <div className="mt-4 flex gap-2"><button disabled={phase === 'show' || phase === 'input'} onClick={()=>{setInput([]);setPhase('show');setMessage('Watch carefully…')}} className="nx-btn nx-btn-primary flex-1 justify-center py-2.5 disabled:opacity-50"><Play className="h-3.5 w-3.5"/> {phase === 'done' ? 'Play again' : phase === 'ready' ? (round === 1 && input.length === 0 ? 'Start round' : 'Try again') : 'Showing pattern…'}</button><button onClick={reset} className="nx-btn nx-btn-ghost px-4 py-2.5">Reset</button></div>
       <p className="mt-3 text-center text-[10px] text-white/35">{loggedIn ? 'Signed in · practice mode only' : 'Sign in to use future saved progress'} · No coins awarded in this demo</p>
     </div>
   </div>
