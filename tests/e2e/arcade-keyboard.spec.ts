@@ -54,8 +54,10 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     }, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
 
     await dialog.focus()
-    await page.keyboard.press('Control+1')
-    await expect(dialog.getByText('Round 1 / 10 · 0 / 1 correct tiles')).toBeVisible()
+    for (const modifier of ['Control', 'Alt', 'Meta']) {
+      await page.keyboard.press(`${modifier}+1`)
+      await expect(dialog.getByText('Round 1 / 10 · 0 / 1 correct tiles')).toBeVisible()
+    }
   })
 
   test('a missed tile resets input and offers a retry for the same round', async ({ page }) => {
