@@ -111,9 +111,9 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: {
     }
   }, [playing, themeIndex])
   return <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-fuchsia-400/15 bg-fuchsia-500/[0.04] p-4">
-    <div className="min-w-0 flex-1"><p className="text-xs font-bold text-fuchsia-200">Original Arcade BGM</p><p className="mt-1 text-[11px] text-white/40">Each game has its own generated theme. Choose a game to preview its unique music.</p></div>
-    <select aria-label="Select game music" value={themeIndex} onChange={(e) => setThemeIndex(Number(e.target.value))} className="max-w-full rounded-lg border border-white/10 bg-[#090a10] px-3 py-2 text-xs text-white">{MUSIC_THEMES.map((theme, i) => <option key={theme.slug} value={i}>{theme.name}</option>)}</select>
-    <button onClick={() => setPlaying(!playing)} className="nx-btn nx-btn-primary min-w-28 justify-center px-3 py-2 text-xs">{playing ? 'Stop music' : 'Play music'}</button>
+    <div className="min-w-0 flex-1"><p className="text-xs font-bold text-fuchsia-200">Original Arcade BGM</p><p id="arcade-music-help" className="mt-1 text-[11px] text-white/40">Each game has its own generated theme. Choose a game to preview its unique music.</p></div>
+    <select aria-label="Select game music" aria-describedby="arcade-music-help" value={themeIndex} onChange={(e) => setThemeIndex(Number(e.target.value))} className="max-w-full rounded-lg border border-white/10 bg-[#090a10] px-3 py-2 text-xs text-white">{MUSIC_THEMES.map((theme, i) => <option key={theme.slug} value={i}>{theme.name}</option>)}</select>
+    <button aria-pressed={playing} onClick={() => setPlaying(!playing)} className="nx-btn nx-btn-primary min-w-28 justify-center px-3 py-2 text-xs">{playing ? 'Stop music' : 'Play music'}</button>
   </div>
 }
 
