@@ -123,6 +123,18 @@ test.describe('Storefront', () => {
           quantity: 99,
           availability: 'in_stock',
         },
+        {
+          productId: 'restored-product',
+          slug: 'restored-product',
+          name: 'Restored product duplicate',
+          image_url: null,
+          brand: null,
+          duration: '1 month',
+          unitPrice: 999,
+          originalPrice: 999,
+          quantity: 3,
+          availability: 'in_stock',
+        },
         { productId: '', name: 'Invalid line', unitPrice: 10, originalPrice: 10, quantity: 1 },
         { productId: 'bad-price', name: 'Invalid price', unitPrice: 'free', originalPrice: 10, quantity: 1 },
       ]))
