@@ -63,17 +63,19 @@ const MUSIC_THEMES = [
   { slug: 'logic-lab', name: 'Logic Lab', bpm: 86, root: 207.65, scale: [0, 2, 4, 6, 7, 9, 11, 12], wave: 'sine' as OscillatorType },
 ]
 
-function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: { themeIndex: number; setThemeIndex: (index: number) => void; playing: boolean; setPlaying: (playing: boolean) => void }) {
+function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying, status, setStatus }: { themeIndex: number; setThemeIndex: (index: number) => void; playing: boolean; setPlaying: (playing: boolean) => void; status: string; setStatus: (status: string) => void }) {
   useEffect(() => {
-    if (!playing) return
-    const theme = MUSIC_THEMES[themeIndex]
+    if (!playing) { setStatus(''); return }
+    const safeThemeIndex = Math.min(Math.max(0, themeIndex), MUSIC_THEMES.length - 1)
+    const theme = MUSIC_THEMES[safeThemeIndex]
+    setStatus('Starting audio…')
     const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!AudioCtor) { setPlaying(false); return }
+    if (!AudioCtor) { setStatus('This browser does not support audio playback.'); setPlaying(false); return }
     let ctx: AudioContext
     try {
       ctx = new AudioCtor()
     } catch {
-      setPlaying(false)
+      setStatus('Audio could not be initialized in this browser.'); setPlaying(false)
       return
     }
     let disposed = false
@@ -85,7 +87,7 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: {
     const playNote = () => {
       // Avoid creating audio nodes while the browser tab is backgrounded.
       if (document.visibilityState !== 'visible' || ctx.state !== 'running') return
-      const scaleIndex = (step * (themeIndex % 3 + 1) + Math.floor(step / 7) * 2 + themeIndex) % theme.scale.length
+      const scaleIndex = (step * (safeThemeIndex % 3 + 1) + Math.floor(step / 7) * 2 + safeThemeIndex) % theme.scale.length
       const octave = step % 8 === 0 ? 0.5 : step % 4 === 2 ? 2 : 1
       const freq = theme.root * octave * Math.pow(2, theme.scale[scaleIndex] / 12)
       const osc = ctx.createOscillator()
@@ -114,13 +116,13 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: {
         void ctx.suspend().catch(() => undefined)
         return
       }
-      void ctx.resume().catch(() => {
-        if (!disposed) setPlaying(false)
+      void ctx.resume().then(() => { if (!disposed) setStatus('Music playing') }).catch(() => {
+        if (!disposed) { setStatus('Audio playback was blocked. Press Play music to try again.'); setPlaying(false) }
       })
     }
     document.addEventListener('visibilitychange', resumeAudio)
-    void ctx.resume().catch(() => {
-      if (!disposed) setPlaying(false)
+    void ctx.resume().then(() => { if (!disposed) setStatus('Music playing') }).catch(() => {
+      if (!disposed) { setStatus('Audio playback was blocked. Press Play music to try again.'); setPlaying(false) }
     })
     playNote()
     const timer = window.setInterval(playNote, beatMs)
@@ -130,9 +132,9 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: {
       document.removeEventListener('visibilitychange', resumeAudio)
       void ctx.close().catch(() => undefined)
     }
-  }, [playing, themeIndex])
+  }, [playing, themeIndex, setPlaying, setStatus])
   return <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-fuchsia-400/15 bg-fuchsia-500/[0.04] p-4">
-    <div className="min-w-0 flex-1"><p className="text-xs font-bold text-fuchsia-200">Original Arcade BGM</p><p id="arcade-music-help" className="mt-1 text-[11px] text-white/40">Each game has its own generated theme. Choose a game to preview its unique music.</p></div>
+    <div className="min-w-0 flex-1"><p className="text-xs font-bold text-fuchsia-200">Original Arcade BGM</p><p id="arcade-music-help" className="mt-1 text-[11px] text-white/40">Each game has its own generated theme. Choose a game to preview its unique music.</p><p aria-live="polite" className="mt-1 text-[11px] text-fuchsia-200/70">{status}</p></div>
     <select aria-label="Select game music" aria-describedby="arcade-music-help" value={themeIndex} onChange={(e) => setThemeIndex(Number(e.target.value))} className="max-w-full rounded-lg border border-white/10 bg-[#090a10] px-3 py-2 text-xs text-white">{MUSIC_THEMES.map((theme, i) => <option key={theme.slug} value={i}>{theme.name}</option>)}</select>
     <button aria-pressed={playing} onClick={() => setPlaying(!playing)} className="nx-btn nx-btn-primary min-w-28 justify-center px-3 py-2 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200">{playing ? 'Stop music' : 'Play music'}</button>
   </div>
@@ -147,7 +149,10 @@ export default function GamesPage() {
     if (!supabase) return
     let active = true
     supabase.from('arcade_games').select('slug').eq('is_active', true).order('sort_order')
-      .then(({ data, error }) => { if (active) setCatalogSlugs(error ? null : (data ?? []).map((row) => row.slug)) })
+      .then(({ data, error }) => {
+        if (!active) return
+        setCatalogSlugs(error ? null : (data ?? []).map((row) => row.slug).filter((slug): slug is string => typeof slug === 'string'))
+      }).catch(() => { if (active) setCatalogSlugs(null) })
     return () => { active = false }
   }, [])
   const [walletStatus, setWalletStatus] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -171,6 +176,7 @@ export default function GamesPage() {
   const [activeGame, setActiveGame] = useState<Game | null>(null)
   const [musicIndex, setMusicIndex] = useState(0)
   const [musicPlaying, setMusicPlaying] = useState(false)
+  const [musicStatus, setMusicStatus] = useState('')
   const closeActiveGame = useCallback(() => {
     setActiveGame(null)
     setMusicPlaying(false)
@@ -206,7 +212,7 @@ export default function GamesPage() {
       </section>
 
       {user && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/[0.06] p-4"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/15 text-violet-200"><Coins className="h-5 w-5"/></div><div><p className="text-xs text-white/45">Your Arcade Coins</p><p className="text-xl font-bold text-white">{walletStatus === 'loading' ? "Loading…" : walletStatus === 'error' || coinBalance === null ? "Unavailable" : coinBalance.toLocaleString()}</p><p aria-live="polite" className="mt-1 text-[10px] text-white/35">{walletStatus === 'error' ? 'Wallet balance could not be loaded. Please refresh or sign in again.' : walletStatus === 'loading' ? 'Checking your wallet…' : 'Balance updated'}</p></div></div><p className="max-w-sm text-xs leading-5 text-white/45">Welcome reward: 10 coins once per account. Level rewards are being secured before activation.</p></div>}
-      <ArcadeMusicPlayer themeIndex={musicIndex} setThemeIndex={setMusicIndex} playing={musicPlaying} setPlaying={setMusicPlaying} />
+      <ArcadeMusicPlayer themeIndex={musicIndex} setThemeIndex={setMusicIndex} playing={musicPlaying} setPlaying={setMusicPlaying} status={musicStatus} setStatus={setMusicStatus} />
       <section id="game-library" className="mt-10 scroll-mt-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Game library</p><h2 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">Choose your next challenge</h2><p className="mt-2 text-sm text-white/45">{games.length} games currently visible · 20 game concepts in the catalogue</p></div>
