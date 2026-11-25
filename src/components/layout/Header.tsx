@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   ChevronDown,
+  Gamepad2,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -24,6 +25,7 @@ import type { Product } from '../../types'
 const NAV = [
   { label: 'Home', to: '/' },
   { label: 'All Products', to: '/products' },
+  { label: 'Games', to: '/games' },
   { label: 'OTT', to: '/category/ott-subscriptions' },
   { label: 'AI Tools', to: '/category/ai-premium-tools' },
   { label: 'Education', to: '/category/educational-subscriptions' },
