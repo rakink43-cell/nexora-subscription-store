@@ -183,7 +183,7 @@ export default function GamesPage() {
         </div>
       </section>
       <section className="mt-8 rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] p-4 text-xs leading-5 text-amber-100/60"><p className="font-semibold text-amber-100/80">Reward status</p>First-login coins are stored in your account wallet. Level rewards remain disabled until each game can verify its completed level server-side. Practice mode does not award coins.</section>
-      {activeGame && <MemoryGame game={activeGame} onClose={() => setActiveGame(null)} loggedIn={Boolean(user)}/>}
+      {activeGame && <MemoryGame game={activeGame} onClose={() => { setActiveGame(null); setMusicPlaying(false) }} loggedIn={Boolean(user)}/>}
     </div>
   )
 }
