@@ -93,6 +93,11 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await expect(dialog.getByText('Press Start to watch the pattern.')).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Start round' })).toBeEnabled()
     await expect(dialog.getByRole('button', { name: /^Tile [1-9]$/ }).first()).toBeDisabled()
+
+    // The previous pattern's delayed timers must be cancelled by Reset.
+    await page.waitForTimeout(1_200)
+    await expect(dialog.getByText('Press Start to watch the pattern.')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: /^Tile [1-9]$/ }).first()).toBeDisabled()
   })
 
   test('Escape closes the game, restores focus and stops its music', async ({ page }) => {
