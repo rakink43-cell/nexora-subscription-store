@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('This account is blocked. Please contact NEXORA support.')
     }
     const resolvedRole = (await api.auth.getRole()) ?? 'customer'
-    void claimArcadeWelcomeCoins()
+    await claimArcadeWelcomeCoins()
     setUser(profile)
     setRole(resolvedRole as Role)
     return profile
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut()
       throw new Error('This account does not have administrator access.')
     }
-    void claimArcadeWelcomeCoins()
+    await claimArcadeWelcomeCoins()
     setUser(profile)
     setRole('admin')
     return profile
