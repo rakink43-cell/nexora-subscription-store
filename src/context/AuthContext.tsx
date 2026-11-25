@@ -33,6 +33,16 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | undefined>(undefined)
 
+async function claimArcadeWelcomeCoins() {
+  if (!supabase) return
+  try {
+    const { error } = await supabase.rpc('arcade_claim_first_login_reward')
+    if (error) console.warn('Arcade welcome reward could not be claimed:', error.message)
+  } catch {
+    // Rewards must never prevent a customer from signing in.
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Profile | null>(null)
   const [role, setRole] = useState<Role | null>(null)
@@ -79,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('This account is blocked. Please contact NEXORA support.')
     }
     const resolvedRole = (await api.auth.getRole()) ?? 'customer'
+    void claimArcadeWelcomeCoins()
     setUser(profile)
     setRole(resolvedRole as Role)
     return profile
@@ -102,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut()
       throw new Error('This account does not have administrator access.')
     }
+    void claimArcadeWelcomeCoins()
     setUser(profile)
     setRole('admin')
     return profile
