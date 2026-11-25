@@ -73,7 +73,21 @@ function readCart(): CartLine[] {
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed.map(normalizeCartLine).filter((line): line is CartLine => line !== null)
+
+    // Merge duplicate product IDs from stale or manually edited browser storage.
+    // Keep the first validated snapshot and cap the combined quantity.
+    const byProduct = new Map<string, CartLine>()
+    for (const candidate of parsed) {
+      const line = normalizeCartLine(candidate)
+      if (!line) continue
+      const existing = byProduct.get(line.productId)
+      if (existing) {
+        existing.quantity = Math.min(MAX_CART_QUANTITY, existing.quantity + line.quantity)
+      } else {
+        byProduct.set(line.productId, line)
+      }
+    }
+    return [...byProduct.values()]
   } catch {
     return []
   }
