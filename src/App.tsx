@@ -28,6 +28,7 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import FaqPage from './pages/FaqPage'
 import OffersPage from './pages/OffersPage'
+import GamesPage from './pages/GamesPage'
 import LegalPage from './pages/LegalPage'
 import NotFoundPage from './pages/NotFoundPage'
 
@@ -98,6 +99,7 @@ export default function App() {
                   <Route path="products" element={<ProductsPage />} />
                   <Route path="category/:slug" element={<ProductsPage />} />
                   <Route path="offers" element={<OffersPage />} />
+                  <Route path="games" element={<GamesPage />} />
                   <Route path="product/:slug" element={<ProductDetailPage />} />
                   <Route path="cart" element={<CartPage />} />
                   <Route path="checkout" element={<CheckoutPage />} />
