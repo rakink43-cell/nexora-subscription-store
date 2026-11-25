@@ -128,7 +128,7 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: {
   return <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-fuchsia-400/15 bg-fuchsia-500/[0.04] p-4">
     <div className="min-w-0 flex-1"><p className="text-xs font-bold text-fuchsia-200">Original Arcade BGM</p><p id="arcade-music-help" className="mt-1 text-[11px] text-white/40">Each game has its own generated theme. Choose a game to preview its unique music.</p></div>
     <select aria-label="Select game music" aria-describedby="arcade-music-help" value={themeIndex} onChange={(e) => setThemeIndex(Number(e.target.value))} className="max-w-full rounded-lg border border-white/10 bg-[#090a10] px-3 py-2 text-xs text-white">{MUSIC_THEMES.map((theme, i) => <option key={theme.slug} value={i}>{theme.name}</option>)}</select>
-    <button aria-pressed={playing} onClick={() => setPlaying(!playing)} className="nx-btn nx-btn-primary min-w-28 justify-center px-3 py-2 text-xs">{playing ? 'Stop music' : 'Play music'}</button>
+    <button aria-pressed={playing} onClick={() => setPlaying(!playing)} className="nx-btn nx-btn-primary min-w-28 justify-center px-3 py-2 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200">{playing ? 'Stop music' : 'Play music'}</button>
   </div>
 }
 
@@ -193,7 +193,7 @@ export default function GamesPage() {
       <section id="game-library" className="mt-10 scroll-mt-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Game library</p><h2 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">Choose your next challenge</h2><p className="mt-2 text-sm text-white/45">{games.length} games currently visible · 20 game concepts in the catalogue</p></div>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter games">{FILTERS.map((f) => <button key={f} aria-pressed={filter === f} onClick={() => setFilter(f)} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${filter === f ? 'border-violet-400/40 bg-violet-500/20 text-violet-200' : 'border-white/10 bg-white/[0.03] text-white/50 hover:text-white'}`}>{f}</button>)}</div>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter games">{FILTERS.map((f) => <button key={f} aria-pressed={filter === f} onClick={() => setFilter(f)} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200 ${filter === f ? 'border-violet-400/40 bg-violet-500/20 text-violet-200' : 'border-white/10 bg-white/[0.03] text-white/50 hover:text-white'}`}>{f}</button>)}</div>
         </div>
         {games.length === 0 ? <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center"><p className="font-semibold text-white">No games in this category yet</p><p className="mt-2 text-sm text-white/45">Try another filter or view all games.</p><button onClick={() => setFilter('All Games')} className="nx-btn nx-btn-ghost mt-4 px-4 py-2">Show all games</button></div> : <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {games.map((game) => {
@@ -206,7 +206,7 @@ export default function GamesPage() {
                 <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold ${game.status === 'playable' ? 'bg-emerald-400/15 text-emerald-200' : 'bg-white/10 text-white/50'}`}>{game.status === 'playable' ? 'PLAYABLE' : 'COMING SOON'}</span>
               </div>
               <div className="p-4"><h3 className="font-display text-base font-bold text-white">{String(game.id).padStart(2, '0')} · {game.title}</h3><p className="mt-1.5 min-h-10 text-xs leading-5 text-white/45">{game.description}</p>
-                <button disabled={game.status !== 'playable'} onClick={() => { setMusicIndex(game.id - 1); setMusicPlaying(true); setActiveGame(game) }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-violet-400/20 bg-violet-500/10 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-white/[0.02] disabled:text-white/30">{game.status === 'playable' ? <><Play className="h-3.5 w-3.5"/> Play demo</> : <><LockKeyhole className="h-3.5 w-3.5"/> In development</>}</button>
+                <button disabled={game.status !== 'playable'} onClick={() => { setMusicIndex(game.id - 1); setMusicPlaying(true); setActiveGame(game) }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-violet-400/20 bg-violet-500/10 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-violet-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200 disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-white/[0.02] disabled:text-white/30">{game.status === 'playable' ? <><Play className="h-3.5 w-3.5"/> Play demo</> : <><LockKeyhole className="h-3.5 w-3.5"/> In development</>}</button>
               </div>
             </article>
           })}
