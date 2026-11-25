@@ -188,4 +188,29 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await expect(dialog).toHaveCount(0)
   })
 
+  test('reopening a closed game starts with music stopped and page unlocked', async ({ page }) => {
+    await page.goto('/games')
+    const launchButton = page.getByRole('button', { name: /Play demo/i })
+
+    await launchButton.click()
+    let dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    await expect(dialog).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Stop music' })).toBeVisible()
+    await dialog.getByRole('button', { name: 'Close game' }).click()
+
+    await expect(dialog).toHaveCount(0)
+    await expect(page.locator('[aria-live="polite"]')).toBeEmpty()
+    await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden')
+    await expect(launchButton).toBeFocused()
+
+    await launchButton.click()
+    dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    await expect(dialog).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Play music' })).toBeVisible()
+    await expect(page.locator('[aria-live="polite"]')).toBeEmpty()
+    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden')
+    await expect(dialog.getByRole('button', { name: 'Close game' })).toBeFocused()
+  })
+
+
 })
