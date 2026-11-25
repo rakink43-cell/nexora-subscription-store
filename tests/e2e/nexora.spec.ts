@@ -208,6 +208,16 @@ test.describe('Guest checkout → manual payment → admin verification', () => 
     const orderNo = page.url().split('/order/')[1] ?? ''
     expect(orderNo).toMatch(/^NX-\d{6}-\d{5}$/)
 
+    // Guest access tokens stay in validated browser storage, not in the URL.
+    const storedToken = await page.evaluate((number) => {
+      const raw = localStorage.getItem('nexora.orderTokens.v1')
+      const parsed = raw ? JSON.parse(raw) as Record<string, unknown> : {}
+      return parsed[number]
+    }, orderNo)
+    expect(typeof storedToken).toBe('string')
+    expect((storedToken as string).length).toBeGreaterThanOrEqual(8)
+    expect(page.url()).not.toContain(storedToken as string)
+
     // 2 · order page: pending payment + instructions
     await expect(page.getByText('Pending Payment').first()).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Complete your payment' })).toBeVisible()
