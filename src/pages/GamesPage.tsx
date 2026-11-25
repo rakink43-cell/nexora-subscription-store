@@ -108,27 +108,64 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
   const [round, setRound] = useState(1)
   const [sequence, setSequence] = useState<number[]>(() => [Math.floor(Math.random() * 9)])
   const [input, setInput] = useState<number[]>([])
-  const [message, setMessage] = useState('Watch the glowing tile, then repeat the pattern.')
-  const [playing, setPlaying] = useState(false)
-  const reset = () => { setRound(1); setSequence([Math.floor(Math.random() * 9)]); setInput([]); setPlaying(false); setMessage('Watch the glowing tile, then repeat the pattern.') }
+  const [phase, setPhase] = useState<'ready' | 'show' | 'input' | 'done'>('ready')
+  const [flash, setFlash] = useState(-1)
+  const [message, setMessage] = useState('Press Start to watch the pattern.')
+  useEffect(() => {
+    if (phase !== 'show') return
+    const timers: ReturnType<typeof setTimeout>[] = []
+    setFlash(-1)
+    sequence.forEach((tile, index) => {
+      timers.push(setTimeout(() => setFlash(tile), 450 + index * 700))
+      timers.push(setTimeout(() => setFlash(-1), 850 + index * 700))
+    })
+    timers.push(setTimeout(() => {
+      setFlash(-1)
+      setInput([])
+      setPhase('input')
+      setMessage('Your turn! Repeat the pattern.')
+    }, 450 + sequence.length * 700))
+    return () => timers.forEach(clearTimeout)
+  }, [phase, sequence])
+
+  const reset = () => {
+    setRound(1)
+    setSequence([Math.floor(Math.random() * 9)])
+    setInput([])
+    setFlash(-1)
+    setPhase('ready')
+    setMessage('Press Start to watch the pattern.')
+  }
   const tap = (n: number) => {
-    if (!playing) return
+    if (phase !== 'input') return
     const next = [...input, n]
     setInput(next)
-    if (sequence[next.length - 1] !== n) { setPlaying(false); setMessage('Not quite! Try again to beat the pattern.'); return }
+    if (sequence[next.length - 1] !== n) {
+      setPhase('ready')
+      setFlash(-1)
+      setMessage('Pattern missed. Press Try again to replay this round.')
+      return
+    }
     if (next.length === sequence.length) {
-      if (round >= 10) { setPlaying(false); setMessage('Great memory! Demo completed. Rewards are not enabled in this preview.'); return }
+      if (round >= 10) {
+        setPhase('done')
+        setMessage('You cleared all 10 practice rounds! Great memory.')
+        return
+      }
       const nextSeq = [...sequence, Math.floor(Math.random() * 9)]
-      setSequence(nextSeq); setInput([]); setRound(round + 1); setPlaying(false); setMessage('Round cleared! Press Start round to continue.')
+      setSequence(nextSeq)
+      setRound(round + 1)
+      setPhase('show')
+      setMessage('Round cleared! Watch the longer pattern.')
     }
   }
   return <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={game.title}>
     <div className="w-full max-w-md rounded-2xl border border-violet-300/20 bg-[#0b0912] p-5 shadow-2xl">
       <div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-violet-300">Practice mini-game</p><h2 className="mt-1 text-xl font-bold text-white">{game.title}</h2></div><button onClick={onClose} aria-label="Close game" className="rounded-lg p-2 text-white/50 hover:bg-white/5"><X className="h-4 w-4"/></button></div>
-      <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.03] p-3 text-center"><p className="text-xs text-white/55">Round {round} / 10</p><p className="mt-1 text-sm text-violet-200">{message}</p></div>
-      <div className="mx-auto mt-4 grid max-w-[280px] grid-cols-3 gap-2">{Array.from({length:9},(_,n)=><button key={n} aria-label={`Tile ${n+1}`} onClick={()=>tap(n)} disabled={!playing} className={`aspect-square rounded-xl border transition ${playing ? 'border-violet-300/20 bg-violet-500/10 hover:bg-violet-500/30 active:scale-95' : 'border-white/5 bg-white/[0.02]'}`}/>)}</div>
-      <div className="mt-4 flex gap-2"><button onClick={()=>{setPlaying(true);setInput([]);setMessage('Repeat the pattern!')}} className="nx-btn nx-btn-primary flex-1 justify-center py-2.5"><Play className="h-3.5 w-3.5"/> {round === 1 && input.length === 0 ? 'Start round' : 'Try round'}</button><button onClick={reset} className="nx-btn nx-btn-ghost px-4 py-2.5">Reset</button></div>
-      <p className="mt-3 text-center text-[10px] text-white/35">{loggedIn ? 'Signed in · practice mode only' : 'Login required for future saved progress'} · No coins awarded in this demo</p>
+      <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.03] p-3 text-center"><p className="text-xs text-white/55">Round {round} / 10</p><p className="mt-1 min-h-5 text-sm text-violet-200">{message}</p></div>
+      <div className="mx-auto mt-4 grid max-w-[280px] grid-cols-3 gap-2">{Array.from({length:9},(_,n)=><button key={n} aria-label={`Tile ${n+1}`} onClick={()=>tap(n)} disabled={phase !== 'input'} className={`aspect-square rounded-xl border transition duration-150 ${flash === n ? 'scale-95 border-fuchsia-200 bg-fuchsia-300 shadow-[0_0_28px_rgba(232,121,249,.8)]' : phase === 'input' ? 'border-violet-300/25 bg-violet-500/15 hover:bg-violet-500/35 active:scale-95' : 'border-white/5 bg-white/[0.02]'}`}/>)}</div>
+      <div className="mt-4 flex gap-2"><button disabled={phase === 'show' || phase === 'input'} onClick={()=>{setInput([]);setPhase('show');setMessage('Watch carefully…')}} className="nx-btn nx-btn-primary flex-1 justify-center py-2.5 disabled:opacity-50"><Play className="h-3.5 w-3.5"/> {phase === 'done' ? 'Play again' : phase === 'ready' ? (round === 1 && input.length === 0 ? 'Start round' : 'Try again') : 'Showing pattern…'}</button><button onClick={phase === 'done' ? reset : reset} className="nx-btn nx-btn-ghost px-4 py-2.5">Reset</button></div>
+      <p className="mt-3 text-center text-[10px] text-white/35">{loggedIn ? 'Signed in · practice mode only' : 'Sign in to use future saved progress'} · No coins awarded in this demo</p>
     </div>
   </div>
 }
