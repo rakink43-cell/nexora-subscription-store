@@ -169,4 +169,23 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await expect(launchButton).toBeFocused()
   })
 
+
+  test('changing music theme while a game is open keeps the game modal usable', async ({ page }) => {
+    await page.goto('/games')
+    await page.getByRole('button', { name: /Play demo/i }).click()
+
+    const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    const selector = page.getByRole('combobox', { name: 'Select game music' })
+    await expect(dialog).toBeVisible()
+    await expect(selector).toHaveValue('0')
+
+    await selector.selectOption({ label: 'Deep Sea' })
+    await expect(selector).toHaveValue('15')
+    await expect(page.locator('[aria-live="polite"]')).toContainText('Music playing', { timeout: 5_000 })
+    await expect(dialog.getByRole('button', { name: 'Start round' })).toBeEnabled()
+
+    await dialog.getByRole('button', { name: 'Close game' }).click()
+    await expect(dialog).toHaveCount(0)
+  })
+
 })
