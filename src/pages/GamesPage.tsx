@@ -112,12 +112,21 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying, sta
       step += 1
     }
     const resumeAudio = () => {
+      if (disposed) return
       if (document.visibilityState !== 'visible') {
-        void ctx.suspend().catch(() => undefined)
+        setStatus('Music paused while this tab is hidden.')
+        void ctx.suspend().catch(() => {
+          if (!disposed) setStatus('Audio could not be paused in the background.')
+        })
         return
       }
-      void ctx.resume().then(() => { if (!disposed) setStatus('Music playing') }).catch(() => {
-        if (!disposed) { setStatus('Audio playback was blocked. Press Play music to try again.'); setPlaying(false) }
+      void ctx.resume().then(() => {
+        if (!disposed) setStatus('Music playing')
+      }).catch(() => {
+        if (!disposed) {
+          setStatus('Audio playback was blocked. Press Play music to try again.')
+          setPlaying(false)
+        }
       })
     }
     document.addEventListener('visibilitychange', resumeAudio)
