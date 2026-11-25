@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, Gamepad2, Ghost, Shield, Rocket, Car, Puzzle,
   Sword, Mountain, Trophy, Coins, LockKeyhole, Play, X, Sparkles,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 
 type Game = { id: number; title: string; genre: string; description: string; icon: typeof Gamepad2; color: string; status: 'playable' | 'soon'; }
 
@@ -36,6 +37,14 @@ const FILTERS = ['All Games', 'Action', 'Adventure', 'Horror', 'Simulator', 'Puz
 export default function GamesPage() {
   const { user } = useAuth()
   const [filter, setFilter] = useState('All Games')
+  const [coinBalance, setCoinBalance] = useState<number | null>(null)
+  useEffect(() => {
+    if (!user || !supabase) { setCoinBalance(null); return }
+    let active = true
+    supabase.from('arcade_wallets').select('coin_balance').eq('user_id', user.id).maybeSingle()
+      .then(({ data, error }) => { if (active && !error) setCoinBalance(Number(data?.coin_balance ?? 0)) })
+    return () => { active = false }
+  }, [user])
   const [activeGame, setActiveGame] = useState<Game | null>(null)
   const games = useMemo(() => GAMES.filter((g) => {
     if (filter === 'All Games') return true
@@ -66,6 +75,7 @@ export default function GamesPage() {
         </div>
       </section>
 
+      {user && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/[0.06] p-4"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/15 text-violet-200"><Coins className="h-5 w-5"/></div><div><p className="text-xs text-white/45">Your Arcade Coins</p><p className="text-xl font-bold text-white">{coinBalance === null ? "Loading…" : coinBalance.toLocaleString()}</p></div></div><p className="max-w-sm text-xs leading-5 text-white/45">Welcome reward: 10 coins once per account. Level rewards are being secured before activation.</p></div>}
       <section id="game-library" className="mt-10 scroll-mt-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Game library</p><h2 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">Choose your next challenge</h2><p className="mt-2 text-sm text-white/45">{GAMES.length} different game concepts · Responsive controls planned</p></div>
@@ -88,7 +98,7 @@ export default function GamesPage() {
           })}
         </div>
       </section>
-      <section className="mt-8 rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] p-4 text-xs leading-5 text-amber-100/60"><p className="font-semibold text-amber-100/80">Rewards preview</p>Coins and level rewards will be activated after the secure account wallet and reward verification are connected. This preview does not award or store coins yet.</section>
+      <section className="mt-8 rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] p-4 text-xs leading-5 text-amber-100/60"><p className="font-semibold text-amber-100/80">Reward status</p>First-login coins are stored in your account wallet. Level rewards remain disabled until each game can verify its completed level server-side. Practice mode does not award coins.</section>
       {activeGame && <MemoryGame game={activeGame} onClose={() => setActiveGame(null)} loggedIn={Boolean(user)}/>}
     </div>
   )
