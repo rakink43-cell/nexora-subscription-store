@@ -307,7 +307,7 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
       setMessage('Round cleared! Watch the longer pattern.')
     }
   }
-  return <div ref={dialogRef} className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={game.title}>
+  return <div ref={dialogRef} onKeyDown={(event)=>{if(phase==='input' && /^[1-9]$/.test(event.key)){event.preventDefault();tap(Number(event.key)-1)}}} className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={game.title}>
     <div className="w-full max-w-md rounded-2xl border border-violet-300/20 bg-[#0b0912] p-5 shadow-2xl">
       <div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-violet-300">Practice mini-game</p><h2 className="mt-1 text-xl font-bold text-white">{game.title}</h2></div><button onClick={onClose} aria-label="Close game" className="rounded-lg p-2 text-white/50 hover:bg-white/5"><X className="h-4 w-4"/></button></div>
       <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.03] p-3 text-center"><p className="text-xs text-white/55">Round {round} / 10 · {Math.min(input.length, sequence.length)} / {sequence.length} tiles</p><p aria-live="polite" aria-atomic="true" className="mt-1 min-h-5 text-sm text-violet-200">{message}</p></div>
