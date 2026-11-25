@@ -4569,3 +4569,17 @@ REVOKE INSERT, UPDATE, DELETE ON public.arcade_game_progress FROM PUBLIC, anon, 
 -- Keep progress read-only to clients. Future verified game RPCs can write using
 -- SECURITY DEFINER after validating the game session and completion server-side.
 GRANT SELECT ON public.arcade_game_progress TO authenticated;
+
+-- >>> 20261126020000_arcade_wallet_ledger_write_lock.sql
+-- ===========================================================================
+-- NEXORA · Arcade wallet and ledger write lock
+-- Coin balances and ledger entries must only be changed by trusted SECURITY
+-- DEFINER RPCs or server-side admin operations, never by browser clients.
+-- ===========================================================================
+
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
+  ON public.arcade_wallets, public.arcade_coin_ledger
+  FROM PUBLIC, anon, authenticated;
+
+-- Owners can still read their balance and transaction history through RLS.
+GRANT SELECT ON public.arcade_wallets, public.arcade_coin_ledger TO authenticated;
