@@ -10,6 +10,10 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await dialog.getByRole('button', { name: 'Start round' }).click()
 
     const tiles = dialog.getByRole('button', { name: /^Tile [1-9]$/ })
+    for (let i = 0; i < 9; i += 1) {
+      await expect(tiles.nth(i)).toHaveAttribute('aria-label', `Tile ${i + 1}`)
+      await expect(tiles.nth(i)).toHaveAttribute('aria-keyshortcuts', String(i + 1))
+    }
     await expect.poll(async () => {
       for (let i = 0; i < 9; i += 1) {
         if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
