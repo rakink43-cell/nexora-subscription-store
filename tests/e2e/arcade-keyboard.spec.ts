@@ -5,6 +5,8 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await page.goto('/games')
     await page.getByRole('button', { name: /Play demo/i }).click()
     const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    await expect(dialog).toHaveAttribute('aria-describedby', 'memory-game-instructions')
+    await expect(page.locator('#memory-game-instructions')).toHaveText('When your turn starts, use the tiles or keyboard keys 1–9.')
     await dialog.getByRole('button', { name: 'Start round' }).click()
 
     const tiles = dialog.getByRole('button', { name: /^Tile [1-9]$/ })
