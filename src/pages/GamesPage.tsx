@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowRight, Gamepad2, Ghost, Shield, Rocket, Car, Puzzle,
@@ -199,16 +199,38 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
   const [phase, setPhase] = useState<'ready' | 'show' | 'input' | 'done'>('ready')
   const [flash, setFlash] = useState(-1)
   const [message, setMessage] = useState('Press Start to watch the pattern.')
+  const dialogRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const previousOverflow = document.body.style.overflow
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
     document.body.style.overflow = 'hidden'
+    dialogRef.current?.querySelector<HTMLElement>('button:not([disabled])')?.focus()
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+      if (!focusable?.length) {
+        event.preventDefault()
+        return
+      }
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current?.contains(document.activeElement))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current?.contains(document.activeElement))) {
+        event.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', handleKeyDown)
+      previouslyFocused?.focus()
     }
   }, [onClose])
   useEffect(() => {
@@ -259,7 +281,7 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
       setMessage('Round cleared! Watch the longer pattern.')
     }
   }
-  return <div className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={game.title}>
+  return <div ref={dialogRef} className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={game.title}>
     <div className="w-full max-w-md rounded-2xl border border-violet-300/20 bg-[#0b0912] p-5 shadow-2xl">
       <div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-violet-300">Practice mini-game</p><h2 className="mt-1 text-xl font-bold text-white">{game.title}</h2></div><button onClick={onClose} aria-label="Close game" className="rounded-lg p-2 text-white/50 hover:bg-white/5"><X className="h-4 w-4"/></button></div>
       <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.03] p-3 text-center"><p className="text-xs text-white/55">Round {round} / 10</p><p className="mt-1 min-h-5 text-sm text-violet-200">{message}</p></div>
