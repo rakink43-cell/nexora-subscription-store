@@ -157,11 +157,15 @@ export default function GamesPage() {
   useEffect(() => {
     if (!supabase) return
     let active = true
-    supabase.from('arcade_games').select('slug').eq('is_active', true).order('sort_order')
-      .then(({ data, error }) => {
+    void (async () => {
+      try {
+        const { data, error } = await supabase.from('arcade_games').select('slug').eq('is_active', true).order('sort_order')
         if (!active) return
         setCatalogSlugs(error ? null : (data ?? []).map((row) => row.slug).filter((slug): slug is string => typeof slug === 'string'))
-      }).catch(() => { if (active) setCatalogSlugs(null) })
+      } catch {
+        if (active) setCatalogSlugs(null)
+      }
+    })()
     return () => { active = false }
   }, [])
   const [walletStatus, setWalletStatus] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -169,17 +173,19 @@ export default function GamesPage() {
     if (!user || !supabase) { setCoinBalance(null); setWalletStatus('error'); return }
     let active = true
     setWalletStatus('loading')
-    supabase.from('arcade_wallets').select('coin_balance').eq('user_id', user.id).maybeSingle()
-      .then(({ data, error }) => {
+    void (async () => {
+      try {
+        const { data, error } = await supabase.from('arcade_wallets').select('coin_balance').eq('user_id', user.id).maybeSingle()
         if (!active) return
         if (error) { setCoinBalance(null); setWalletStatus('error'); return }
         setCoinBalance(Number(data?.coin_balance ?? 0))
         setWalletStatus('ready')
-      }).catch(() => {
+      } catch {
         if (!active) return
         setCoinBalance(null)
         setWalletStatus('error')
-      })
+      }
+    })()
     return () => { active = false }
   }, [user])
   const [activeGame, setActiveGame] = useState<Game | null>(null)
