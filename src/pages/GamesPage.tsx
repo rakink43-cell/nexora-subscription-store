@@ -175,7 +175,7 @@ export default function GamesPage() {
           <div>
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-violet-300"><Gamepad2 className="h-4 w-4"/> NEXORA ARCADE</p>
             <h1 className="mt-3 font-display text-4xl font-black tracking-tight text-white sm:text-6xl">Play. Explore.<br/><span className="bg-gradient-to-r from-violet-300 to-fuchsia-400 bg-clip-text text-transparent">Earn Rewards.</span></h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-white/55 sm:text-base">Twenty mini-game worlds are planned for your next break. Play across mobile and desktop, save progress to your account, and collect rewards as the secure wallet system rolls out.</p>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-white/55 sm:text-base">Twenty mini-game worlds are planned. Neon Memory is currently available as a practice demo; progress saving and level rewards will unlock only after secure server verification. Play on mobile or desktop.</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a href="#game-library" className="nx-btn nx-btn-primary px-4 py-2.5"><Play className="h-4 w-4"/> Explore games</a>
               <Link to="/dashboard" className="nx-btn nx-btn-ghost px-4 py-2.5"><Coins className="h-4 w-4"/> {user ? 'My account' : 'Login to play'}</Link>
