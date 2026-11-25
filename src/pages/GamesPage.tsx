@@ -111,9 +111,22 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying, sta
       }
       step += 1
     }
+    let timer: number | null = null
+    const stopTimer = () => {
+      if (timer !== null) {
+        window.clearInterval(timer)
+        timer = null
+      }
+    }
+    const startTimer = () => {
+      stopTimer()
+      playNote()
+      timer = window.setInterval(playNote, beatMs)
+    }
     const resumeAudio = () => {
       if (disposed) return
       if (document.visibilityState !== 'visible') {
+        stopTimer()
         setStatus('Music paused while this tab is hidden.')
         void ctx.suspend().catch(() => {
           if (!disposed) setStatus('Audio could not be paused in the background.')
@@ -121,7 +134,10 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying, sta
         return
       }
       void ctx.resume().then(() => {
-        if (!disposed) setStatus('Music playing')
+        if (!disposed) {
+          setStatus('Music playing')
+          startTimer()
+        }
       }).catch(() => {
         if (!disposed) {
           setStatus('Audio playback was blocked. Press Play music to try again.')
@@ -130,14 +146,10 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying, sta
       })
     }
     document.addEventListener('visibilitychange', resumeAudio)
-    void ctx.resume().then(() => { if (!disposed) setStatus('Music playing') }).catch(() => {
-      if (!disposed) { setStatus('Audio playback was blocked. Press Play music to try again.'); setPlaying(false) }
-    })
-    playNote()
-    const timer = window.setInterval(playNote, beatMs)
+    resumeAudio()
     return () => {
       disposed = true
-      window.clearInterval(timer)
+      stopTimer()
       document.removeEventListener('visibilitychange', resumeAudio)
       void ctx.close().catch(() => undefined)
     }
