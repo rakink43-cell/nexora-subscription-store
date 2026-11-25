@@ -58,18 +58,22 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await expect(dialog.getByRole('button', { name: 'Try again' })).toBeEnabled()
   })
 
-  test('Escape closes the game and stops its background music', async ({ page }) => {
+  test('Escape closes the game, restores focus and stops its music', async ({ page }) => {
     await page.goto('/games')
-    await page.getByRole('button', { name: /Play demo/i }).click()
+    const launchButton = page.getByRole('button', { name: /Play demo/i })
+    await launchButton.click()
     const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
     await expect(dialog).toBeVisible()
     await expect(page.getByRole('button', { name: 'Stop music' })).toBeVisible()
+    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden')
 
     await dialog.focus()
     await dialog.press('Escape')
 
     await expect(dialog).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Play music' })).toBeVisible()
+    await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden')
+    await expect(launchButton).toBeFocused()
   })
 
 })
