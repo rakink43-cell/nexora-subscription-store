@@ -667,6 +667,33 @@ begin
     (select count(*) from pg_policies where schemaname = 'public') >= 20,
     'policies exist across the schema');
 
+  -- Arcade coin balance, ledger, and progress are read-only to browser roles.
+  perform tests.assert(
+    NOT has_table_privilege('authenticated', 'public.arcade_wallets', 'INSERT')
+    AND NOT has_table_privilege('authenticated', 'public.arcade_wallets', 'UPDATE')
+    AND NOT has_table_privilege('authenticated', 'public.arcade_wallets', 'DELETE'),
+    'authenticated clients cannot directly mutate Arcade wallets');
+  perform tests.assert(
+    NOT has_table_privilege('anon', 'public.arcade_wallets', 'INSERT')
+    AND NOT has_table_privilege('anon', 'public.arcade_wallets', 'UPDATE')
+    AND NOT has_table_privilege('anon', 'public.arcade_wallets', 'DELETE'),
+    'anonymous clients cannot directly mutate Arcade wallets');
+  perform tests.assert(
+    NOT has_table_privilege('authenticated', 'public.arcade_coin_ledger', 'INSERT')
+    AND NOT has_table_privilege('authenticated', 'public.arcade_coin_ledger', 'UPDATE')
+    AND NOT has_table_privilege('authenticated', 'public.arcade_coin_ledger', 'DELETE'),
+    'authenticated clients cannot directly mutate Arcade coin ledger');
+  perform tests.assert(
+    NOT has_table_privilege('authenticated', 'public.arcade_game_progress', 'INSERT')
+    AND NOT has_table_privilege('authenticated', 'public.arcade_game_progress', 'UPDATE')
+    AND NOT has_table_privilege('authenticated', 'public.arcade_game_progress', 'DELETE'),
+    'authenticated clients cannot directly submit Arcade progress');
+  perform tests.assert(
+    has_table_privilege('authenticated', 'public.arcade_wallets', 'SELECT')
+    AND has_table_privilege('authenticated', 'public.arcade_coin_ledger', 'SELECT')
+    AND has_table_privilege('authenticated', 'public.arcade_game_progress', 'SELECT'),
+    'authenticated users retain read access to Arcade account data');
+
   -- cleanup fixtures
   delete from auth.users where email like 'rls-test-%@nexora.test';
   delete from public.orders where customer_email in ('guest@nexora.test');
