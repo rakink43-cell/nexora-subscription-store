@@ -28,7 +28,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'], baseURL: BASE } },
-    { name: 'demo', use: { ...devices['Desktop Chrome'], baseURL: DEMO }, testMatch: /nexora\.spec\.ts/ },
+    { name: 'demo', use: { ...devices['Desktop Chrome'], baseURL: DEMO }, testMatch: /(?:nexora|arcade-keyboard)\.spec\.ts/ },
   ],
 })
 
