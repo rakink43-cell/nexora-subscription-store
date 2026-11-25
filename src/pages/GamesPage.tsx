@@ -193,9 +193,9 @@ export default function GamesPage() {
       <section id="game-library" className="mt-10 scroll-mt-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Game library</p><h2 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">Choose your next challenge</h2><p className="mt-2 text-sm text-white/45">{games.length} games currently visible · 20 game concepts in the catalogue</p></div>
-          <div className="flex flex-wrap gap-1.5">{FILTERS.map((f) => <button key={f} onClick={() => setFilter(f)} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${filter === f ? 'border-violet-400/40 bg-violet-500/20 text-violet-200' : 'border-white/10 bg-white/[0.03] text-white/50 hover:text-white'}`}>{f}</button>)}</div>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter games">{FILTERS.map((f) => <button key={f} aria-pressed={filter === f} onClick={() => setFilter(f)} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${filter === f ? 'border-violet-400/40 bg-violet-500/20 text-violet-200' : 'border-white/10 bg-white/[0.03] text-white/50 hover:text-white'}`}>{f}</button>)}</div>
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {games.length === 0 ? <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center"><p className="font-semibold text-white">No games in this category yet</p><p className="mt-2 text-sm text-white/45">Try another filter or view all games.</p><button onClick={() => setFilter('All Games')} className="nx-btn nx-btn-ghost mt-4 px-4 py-2">Show all games</button></div> : <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {games.map((game) => {
             const Icon = game.icon
             return <article key={game.id} className="group overflow-hidden rounded-2xl border border-white/8 bg-[#0a0a0f] transition hover:-translate-y-0.5 hover:border-violet-400/30">
@@ -210,7 +210,7 @@ export default function GamesPage() {
               </div>
             </article>
           })}
-        </div>
+        </div>}
       </section>
       <section className="mt-8 rounded-2xl border border-amber-400/15 bg-amber-400/[0.04] p-4 text-xs leading-5 text-amber-100/60"><p className="font-semibold text-amber-100/80">Reward status</p>First-login coins are stored in your account wallet. Level rewards remain disabled until each game can verify its completed level server-side. Practice mode does not award coins.</section>
       {activeGame && <MemoryGame game={activeGame} onClose={closeActiveGame} loggedIn={Boolean(user)}/>}
@@ -310,9 +310,10 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
   return <div ref={dialogRef} className="fixed inset-0 z-[100] grid place-items-center bg-black/80 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={game.title}>
     <div className="w-full max-w-md rounded-2xl border border-violet-300/20 bg-[#0b0912] p-5 shadow-2xl">
       <div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-violet-300">Practice mini-game</p><h2 className="mt-1 text-xl font-bold text-white">{game.title}</h2></div><button onClick={onClose} aria-label="Close game" className="rounded-lg p-2 text-white/50 hover:bg-white/5"><X className="h-4 w-4"/></button></div>
-      <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.03] p-3 text-center"><p className="text-xs text-white/55">Round {round} / 10</p><p aria-live="polite" aria-atomic="true" className="mt-1 min-h-5 text-sm text-violet-200">{message}</p></div>
-      <div className="mx-auto mt-4 grid max-w-[280px] grid-cols-3 gap-2">{Array.from({length:9},(_,n)=><button key={n} aria-label={`Tile ${n+1}`} onClick={()=>tap(n)} disabled={phase !== 'input'} className={`aspect-square rounded-xl border transition duration-150 ${flash === n ? 'scale-95 border-fuchsia-200 bg-fuchsia-300 shadow-[0_0_28px_rgba(232,121,249,.8)]' : phase === 'input' ? 'border-violet-300/25 bg-violet-500/15 hover:bg-violet-500/35 active:scale-95' : 'border-white/5 bg-white/[0.02]'}`}/>)}</div>
-      <div className="mt-4 flex gap-2"><button disabled={phase === 'show' || phase === 'input'} onClick={()=>{if(phase === 'done'){reset();return}setInput([]);setPhase('show');setMessage('Watch carefully…')}} className="nx-btn nx-btn-primary flex-1 justify-center py-2.5 disabled:opacity-50"><Play className="h-3.5 w-3.5"/> {phase === 'done' ? 'Play again' : phase === 'ready' ? (round === 1 && input.length === 0 ? 'Start round' : 'Try again') : 'Showing pattern…'}</button><button onClick={reset} className="nx-btn nx-btn-ghost px-4 py-2.5">Reset</button></div>
+      <div className="mt-4 rounded-xl border border-white/8 bg-white/[0.03] p-3 text-center"><p className="text-xs text-white/55">Round {round} / 10 · {Math.min(input.length, sequence.length)} / {sequence.length} tiles</p><p aria-live="polite" aria-atomic="true" className="mt-1 min-h-5 text-sm text-violet-200">{message}</p></div>
+      <p className="mt-3 text-center text-[11px] text-white/45">When your turn starts, use the tiles or keyboard keys 1–9.</p>
+      <div className="mx-auto mt-3 grid max-w-[280px] grid-cols-3 gap-2">{Array.from({length:9},(_,n)=><button key={n} aria-label={`Tile ${n+1}`} aria-keyshortcuts={String(n+1)} onClick={()=>tap(n)} disabled={phase !== 'input'} className={`aspect-square rounded-xl border transition duration-150 ${flash === n ? 'scale-95 border-fuchsia-200 bg-fuchsia-300 shadow-[0_0_28px_rgba(232,121,249,.8)]' : phase === 'input' ? 'border-violet-300/25 bg-violet-500/15 hover:bg-violet-500/35 active:scale-95' : 'border-white/5 bg-white/[0.02]'}`}/>)}</div>
+      <div className="mt-4 flex gap-2"><button disabled={phase === 'show' || phase === 'input'} onClick={()=>{if(phase === 'done'){reset();setPhase('show');setMessage('New game! Watch the pattern.');return}setInput([]);setPhase('show');setMessage('Watch carefully…')}} className="nx-btn nx-btn-primary flex-1 justify-center py-2.5 disabled:opacity-50"><Play className="h-3.5 w-3.5"/> {phase === 'done' ? 'Play again' : phase === 'ready' ? (round === 1 && input.length === 0 ? 'Start round' : 'Try again') : 'Showing pattern…'}</button><button onClick={reset} className="nx-btn nx-btn-ghost px-4 py-2.5">Reset</button></div>
       <p className="mt-3 text-center text-[10px] text-white/35">{loggedIn ? 'Signed in · practice mode only' : 'Sign in to use future saved progress'} · No coins awarded in this demo</p>
     </div>
   </div>
