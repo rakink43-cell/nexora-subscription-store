@@ -104,6 +104,8 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await page.goto('/games')
     const launchButton = page.getByRole('button', { name: /Play demo/i })
     await launchButton.click()
+    await expect(page.getByRole('combobox', { name: 'Select game music' })).toHaveValue('0')
+    await expect(page.locator('[aria-live="polite"]')).toContainText('Music playing', { timeout: 5_000 })
     const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
     await expect(dialog).toBeVisible()
     await expect(page.getByRole('button', { name: 'Stop music' })).toBeVisible()
