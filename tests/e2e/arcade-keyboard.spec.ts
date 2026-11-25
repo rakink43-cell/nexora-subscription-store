@@ -108,6 +108,17 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await expect(dialog).toBeVisible()
     await expect(page.getByRole('button', { name: 'Stop music' })).toBeVisible()
     await expect(page.locator('body')).toHaveCSS('overflow', 'hidden')
+    const closeButton = dialog.getByRole('button', { name: 'Close game' })
+    const resetButton = dialog.getByRole('button', { name: 'Reset' })
+    await expect(closeButton).toBeFocused()
+
+    // Keyboard focus must stay inside the modal in both directions.
+    await resetButton.focus()
+    await page.keyboard.press('Tab')
+    await expect(closeButton).toBeFocused()
+    await closeButton.focus()
+    await page.keyboard.press('Shift+Tab')
+    await expect(resetButton).toBeFocused()
 
     await dialog.focus()
     await dialog.press('Escape')
