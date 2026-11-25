@@ -34,6 +34,80 @@ const GAMES: Game[] = [
 
 const FILTERS = ['All Games', 'Action', 'Adventure', 'Horror', 'Simulator', 'Puzzle']
 
+const MUSIC_THEMES = [
+  { slug: 'neon-memory', name: 'Neon Memory', bpm: 92, root: 220, scale: [0, 3, 7, 10, 12, 15, 19], wave: 'sine' as OscillatorType },
+  { slug: 'shadow-escape', name: 'Shadow Escape', bpm: 68, root: 110, scale: [0, 2, 3, 7, 8, 12], wave: 'triangle' as OscillatorType },
+  { slug: 'tower-guard', name: 'Tower Guard', bpm: 108, root: 146.83, scale: [0, 4, 7, 9, 12, 16, 19], wave: 'square' as OscillatorType },
+  { slug: 'star-pilot', name: 'Star Pilot', bpm: 118, root: 174.61, scale: [0, 2, 4, 7, 9, 12, 14, 16], wave: 'sine' as OscillatorType },
+  { slug: 'turbo-circuit', name: 'Turbo Circuit', bpm: 128, root: 130.81, scale: [0, 2, 4, 7, 9, 12, 14], wave: 'sawtooth' as OscillatorType },
+  { slug: 'dungeon-quest', name: 'Dungeon Quest', bpm: 84, root: 164.81, scale: [0, 3, 5, 7, 10, 12, 15], wave: 'triangle' as OscillatorType },
+  { slug: 'mountain-climb', name: 'Mountain Climb', bpm: 96, root: 196, scale: [0, 2, 4, 7, 9, 12, 16], wave: 'sine' as OscillatorType },
+  { slug: 'zombie-holdout', name: 'Zombie Holdout', bpm: 76, root: 123.47, scale: [0, 1, 5, 7, 8, 12], wave: 'sawtooth' as OscillatorType },
+  { slug: 'mystery-rooms', name: 'Mystery Rooms', bpm: 72, root: 207.65, scale: [0, 2, 3, 6, 7, 9, 12], wave: 'triangle' as OscillatorType },
+  { slug: 'battle-blocks', name: 'Battle Blocks', bpm: 112, root: 155.56, scale: [0, 2, 5, 7, 9, 12, 14], wave: 'square' as OscillatorType },
+  { slug: 'city-builder', name: 'City Builder', bpm: 88, root: 174.61, scale: [0, 2, 4, 5, 7, 9, 11, 12], wave: 'sine' as OscillatorType },
+  { slug: 'farm-life', name: 'Farm Life', bpm: 90, root: 196, scale: [0, 2, 4, 7, 9, 12, 14], wave: 'triangle' as OscillatorType },
+  { slug: 'cafe-manager', name: 'Cafe Manager', bpm: 100, root: 220, scale: [0, 2, 4, 7, 9, 11, 12], wave: 'sine' as OscillatorType },
+  { slug: 'treasure-trail', name: 'Treasure Trail', bpm: 104, root: 185, scale: [0, 2, 4, 7, 9, 12, 16], wave: 'triangle' as OscillatorType },
+  { slug: 'endless-runner', name: 'Endless Runner', bpm: 120, root: 164.81, scale: [0, 2, 4, 7, 9, 12, 14], wave: 'square' as OscillatorType },
+  { slug: 'deep-sea', name: 'Deep Sea', bpm: 64, root: 130.81, scale: [0, 3, 5, 7, 10, 12, 15], wave: 'sine' as OscillatorType },
+  { slug: 'tactical-grid', name: 'Tactical Grid', bpm: 82, root: 146.83, scale: [0, 2, 5, 7, 9, 12, 14], wave: 'triangle' as OscillatorType },
+  { slug: 'alien-outpost', name: 'Alien Outpost', bpm: 102, root: 155.56, scale: [0, 1, 4, 6, 7, 8, 11, 12], wave: 'sine' as OscillatorType },
+  { slug: 'parkour-rush', name: 'Parkour Rush', bpm: 126, root: 185, scale: [0, 2, 4, 7, 9, 12, 14], wave: 'sawtooth' as OscillatorType },
+  { slug: 'logic-lab', name: 'Logic Lab', bpm: 86, root: 207.65, scale: [0, 2, 4, 6, 7, 9, 11, 12], wave: 'sine' as OscillatorType },
+]
+
+function ArcadeMusicPlayer() {
+  const [themeIndex, setThemeIndex] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  useEffect(() => {
+    if (!playing) return
+    const theme = MUSIC_THEMES[themeIndex]
+    const AudioCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!AudioCtor) { setPlaying(false); return }
+    const ctx = new AudioCtor()
+    const master = ctx.createGain()
+    master.gain.value = 0.055
+    master.connect(ctx.destination)
+    let step = 0
+    const beatMs = 60000 / theme.bpm / 2
+    const playNote = () => {
+      const scaleIndex = (step * (themeIndex % 3 + 1) + Math.floor(step / 7) * 2 + themeIndex) % theme.scale.length
+      const octave = step % 8 === 0 ? 0.5 : step % 4 === 2 ? 2 : 1
+      const freq = theme.root * octave * Math.pow(2, theme.scale[scaleIndex] / 12)
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = theme.wave
+      osc.frequency.setValueAtTime(freq, ctx.currentTime)
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(step % 4 === 0 ? 0.42 : 0.2, ctx.currentTime + 0.025)
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + beatMs / 1000 * 0.85)
+      osc.connect(gain); gain.connect(master)
+      osc.start(); osc.stop(ctx.currentTime + beatMs / 1000)
+      if (step % 4 === 0) {
+        const bass = ctx.createOscillator()
+        const bassGain = ctx.createGain()
+        bass.type = 'sine'
+        bass.frequency.setValueAtTime(theme.root * 0.5, ctx.currentTime)
+        bassGain.gain.setValueAtTime(0.12, ctx.currentTime)
+        bassGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3)
+        bass.connect(bassGain); bassGain.connect(master)
+        bass.start(); bass.stop(ctx.currentTime + 0.32)
+      }
+      step += 1
+    }
+    void ctx.resume()
+    playNote()
+    const timer = window.setInterval(playNote, beatMs)
+    return () => { window.clearInterval(timer); void ctx.close() }
+  }, [playing, themeIndex])
+  return <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-fuchsia-400/15 bg-fuchsia-500/[0.04] p-4">
+    <div className="min-w-0 flex-1"><p className="text-xs font-bold text-fuchsia-200">Original Arcade BGM</p><p className="mt-1 text-[11px] text-white/40">Each game has its own generated theme. Choose a game to preview its unique music.</p></div>
+    <select aria-label="Select game music" value={themeIndex} onChange={(e) => setThemeIndex(Number(e.target.value))} className="max-w-full rounded-lg border border-white/10 bg-[#090a10] px-3 py-2 text-xs text-white">{MUSIC_THEMES.map((theme, i) => <option key={theme.slug} value={i}>{theme.name}</option>)}</select>
+    <button onClick={() => setPlaying((p) => !p)} className="nx-btn nx-btn-primary min-w-28 justify-center px-3 py-2 text-xs">{playing ? 'Stop music' : 'Play music'}</button>
+  </div>
+}
+
 export default function GamesPage() {
   const { user } = useAuth()
   const [filter, setFilter] = useState('All Games')
@@ -85,6 +159,7 @@ export default function GamesPage() {
       </section>
 
       {user && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-violet-400/20 bg-violet-500/[0.06] p-4"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-400/15 text-violet-200"><Coins className="h-5 w-5"/></div><div><p className="text-xs text-white/45">Your Arcade Coins</p><p className="text-xl font-bold text-white">{coinBalance === null ? "Loading…" : coinBalance.toLocaleString()}</p></div></div><p className="max-w-sm text-xs leading-5 text-white/45">Welcome reward: 10 coins once per account. Level rewards are being secured before activation.</p></div>}
+      <ArcadeMusicPlayer />
       <section id="game-library" className="mt-10 scroll-mt-24">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-300">Game library</p><h2 className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">Choose your next challenge</h2><p className="mt-2 text-sm text-white/45">{games.length} games currently visible · 20 game concepts in the catalogue</p></div>
