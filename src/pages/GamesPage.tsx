@@ -161,6 +161,10 @@ export default function GamesPage() {
         if (error) { setCoinBalance(null); setWalletStatus('error'); return }
         setCoinBalance(Number(data?.coin_balance ?? 0))
         setWalletStatus('ready')
+      }).catch(() => {
+        if (!active) return
+        setCoinBalance(null)
+        setWalletStatus('error')
       })
     return () => { active = false }
   }, [user])
