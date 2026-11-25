@@ -70,6 +70,8 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: {
     let step = 0
     const beatMs = 60000 / theme.bpm / 2
     const playNote = () => {
+      // Avoid creating audio nodes while the browser tab is backgrounded.
+      if (document.visibilityState !== 'visible' || ctx.state !== 'running') return
       const scaleIndex = (step * (themeIndex % 3 + 1) + Math.floor(step / 7) * 2 + themeIndex) % theme.scale.length
       const octave = step % 8 === 0 ? 0.5 : step % 4 === 2 ? 2 : 1
       const freq = theme.root * octave * Math.pow(2, theme.scale[scaleIndex] / 12)
@@ -94,10 +96,19 @@ function ArcadeMusicPlayer({ themeIndex, setThemeIndex, playing, setPlaying }: {
       }
       step += 1
     }
+    const resumeAudio = () => {
+      if (document.visibilityState === 'visible') void ctx.resume()
+      else void ctx.suspend()
+    }
+    document.addEventListener('visibilitychange', resumeAudio)
     void ctx.resume()
     playNote()
     const timer = window.setInterval(playNote, beatMs)
-    return () => { window.clearInterval(timer); void ctx.close() }
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', resumeAudio)
+      void ctx.close()
+    }
   }, [playing, themeIndex])
   return <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-fuchsia-400/15 bg-fuchsia-500/[0.04] p-4">
     <div className="min-w-0 flex-1"><p className="text-xs font-bold text-fuchsia-200">Original Arcade BGM</p><p className="mt-1 text-[11px] text-white/40">Each game has its own generated theme. Choose a game to preview its unique music.</p></div>
