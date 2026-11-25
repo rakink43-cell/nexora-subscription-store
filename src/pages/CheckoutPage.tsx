@@ -96,17 +96,6 @@ export default function CheckoutPage() {
   const total = Math.max(0, offerSubtotal - discount)
   const selectedMethod = activeMethods.find((m) => m.method_key === method)
 
-  if (lines.length === 0) {
-    return (
-      <div className="nx-container py-16 text-center">
-        <ShoppingBag className="mx-auto h-10 w-10 text-white/20" aria-hidden />
-        <h1 className="mt-3 font-display text-xl font-bold text-white">Nothing to check out</h1>
-        <p className="mt-1 text-[13px] text-white/45">Your cart is empty — add a subscription first.</p>
-        <ButtonLink to="/products" className="mt-5">Browse subscriptions</ButtonLink>
-      </div>
-    )
-  }
-
   const validate = () => {
     const next: Record<string, string> = {}
     if (form.fullName.trim().length < 2) next.fullName = 'Please enter your full name.'
@@ -150,6 +139,17 @@ export default function CheckoutPage() {
     }).catch(() => undefined)
     return () => { active = false }
   }, [offerSubtotal, coupon?.code])
+
+  if (lines.length === 0) {
+    return (
+      <div className="nx-container py-16 text-center">
+        <ShoppingBag className="mx-auto h-10 w-10 text-white/20" aria-hidden />
+        <h1 className="mt-3 font-display text-xl font-bold text-white">Nothing to check out</h1>
+        <p className="mt-1 text-[13px] text-white/45">Your cart is empty — add a subscription first.</p>
+        <ButtonLink to="/products" className="mt-5">Browse subscriptions</ButtonLink>
+      </div>
+    )
+  }
 
   const copy = async (text: string, key: string) => {
     try {
