@@ -24,8 +24,8 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     }
     expect(target).toBeGreaterThanOrEqual(0)
     await expect(tiles.nth(0)).toBeEnabled({ timeout: 5_000 })
-    await tiles.nth(0).focus()
-    await tiles.nth(0).press(String(target + 1))
+    await dialog.focus()
+    await dialog.press(String(target + 1))
     await expect(dialog.getByText('Round 1 / 10 · 1 / 1 correct tiles')).toBeVisible()
   })
 })
