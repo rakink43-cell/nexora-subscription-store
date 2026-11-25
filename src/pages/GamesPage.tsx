@@ -311,6 +311,7 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
     if (phase !== 'input') return
     const next = [...input, n]
     if (sequence[next.length - 1] !== n) {
+      setInput([])
       setPhase('ready')
       setFlash(-1)
       setMessage('Pattern missed. Press Try again to replay this round.')
