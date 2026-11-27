@@ -347,4 +347,60 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await expect(dialog.getByText('Round 1 / 10 · 1 / 1 correct tiles')).toBeVisible()
   })
 
+  test('new pattern steps do not repeat the immediately previous tile', async ({ page }) => {
+    await page.goto('/games')
+    await page.getByRole('button', { name: /Play demo/i }).click()
+    const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    const tiles = dialog.getByRole('button', { name: /^Tile [1-9]$/ })
+
+    await dialog.getByRole('button', { name: 'Start round' }).click()
+    const firstTile = await expect.poll(async () => {
+      for (let i = 0; i < 9; i += 1) {
+        if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
+      }
+      return -1
+    }, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
+
+    let first = -1
+    for (let i = 0; i < 9; i += 1) {
+      if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') {
+        first = i
+        break
+      }
+    }
+    expect(first).toBeGreaterThanOrEqual(0)
+    await expect(tiles.nth(0)).toBeEnabled({ timeout: 5_000 })
+    await tiles.nth(first).click()
+    await expect(dialog.getByText('Round 2 / 10 · 0 / 2 correct tiles')).toBeVisible()
+
+    await expect.poll(async () => {
+      for (let i = 0; i < 9; i += 1) {
+        if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
+      }
+      return -1
+    }, { timeout: 5_000 }).toBe(first)
+
+    await expect.poll(async () => {
+      for (let i = 0; i < 9; i += 1) {
+        if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
+      }
+      return -1
+    }, { timeout: 5_000 }).not.toBe(-1)
+
+    let second = -1
+    await expect.poll(async () => {
+      for (let i = 0; i < 9; i += 1) {
+        if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
+      }
+      return -1
+    }, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
+    for (let i = 0; i < 9; i += 1) {
+      if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') {
+        second = i
+        break
+      }
+    }
+    expect(second).not.toBe(first)
+  })
+
 })
