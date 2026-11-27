@@ -373,4 +373,39 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     expect(await flashingTile()).not.toBe(first)
   })
 
+  test('Reset after partial input restores a clean first-round state', async ({ page }) => {
+    await page.goto('/games')
+    await page.getByRole('button', { name: /Play demo/i }).click()
+    const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
+    const tiles = dialog.getByRole('button', { name: /^Tile [1-9]$/ })
+
+    await dialog.getByRole('button', { name: 'Start round' }).click()
+    await expect.poll(async () => {
+      for (let i = 0; i < 9; i += 1) {
+        if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
+      }
+      return -1
+    }, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
+
+    let target = -1
+    for (let i = 0; i < 9; i += 1) {
+      if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') {
+        target = i
+        break
+      }
+    }
+    expect(target).toBeGreaterThanOrEqual(0)
+    await expect(tiles.nth(0)).toBeEnabled({ timeout: 5_000 })
+    await tiles.nth(target).click()
+    await expect(dialog.getByText('Round 2 / 10 · 0 / 2 correct tiles')).toBeVisible()
+
+    await dialog.getByRole('button', { name: 'Reset' }).click()
+    await expect(dialog.getByText('Round 1 / 10 · 0 / 1 correct tiles')).toBeVisible()
+    await expect(dialog.getByText('Press Start to watch the pattern.')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Start round' })).toBeEnabled()
+    for (let i = 0; i < 9; i += 1) {
+      await expect(tiles.nth(i)).toBeDisabled()
+    }
+  })
+
 })
