@@ -369,7 +369,7 @@ test.describe('NEXORA Arcade keyboard controls', () => {
 
     await expect.poll(flashingTile, { timeout: 5_000 }).toBe(first)
     await expect.poll(flashingTile, { timeout: 2_000 }).toBe(-1)
-    const second = await expect.poll(flashingTile, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
+    await expect.poll(flashingTile, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
     expect(await flashingTile()).not.toBe(first)
   })
 
