@@ -35,6 +35,11 @@ const GAMES: Game[] = [
 const FILTERS = ['All Games', 'Action', 'Adventure', 'Horror', 'Simulator', 'Puzzle']
 
 const gameSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const randomMemoryTile = (previous?: number) => {
+  const choices = Array.from({ length: 9 }, (_, tile) => tile).filter((tile) => tile !== previous)
+  return choices[Math.floor(Math.random() * choices.length)]
+}
+
 const musicIndexForGame = (game: Game) => {
   const index = MUSIC_THEMES.findIndex((theme) => theme.slug === gameSlug(game.title))
   return index >= 0 ? index : 0
@@ -270,7 +275,7 @@ export default function GamesPage() {
 
 function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => void; loggedIn: boolean }) {
   const [round, setRound] = useState(1)
-  const [sequence, setSequence] = useState<number[]>(() => [Math.floor(Math.random() * 9)])
+  const [sequence, setSequence] = useState<number[]>(() => [randomMemoryTile()])
   const [input, setInput] = useState<number[]>([])
   const [phase, setPhase] = useState<'ready' | 'show' | 'input' | 'done'>('ready')
   const [flash, setFlash] = useState(-1)
@@ -328,7 +333,7 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
 
   const reset = () => {
     setRound(1)
-    setSequence([Math.floor(Math.random() * 9)])
+    setSequence([randomMemoryTile()])
     setInput([])
     setFlash(-1)
     setPhase('ready')
@@ -351,7 +356,7 @@ function MemoryGame({ game, onClose, loggedIn }: { game: Game; onClose: () => vo
         setMessage('You cleared all 10 practice rounds! Great memory.')
         return
       }
-      const nextSeq = [...sequence, Math.floor(Math.random() * 9)]
+      const nextSeq = [...sequence, randomMemoryTile(sequence[sequence.length - 1])]
       setInput([])
       setSequence(nextSeq)
       setRound(round + 1)
