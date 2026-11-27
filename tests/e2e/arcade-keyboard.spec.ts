@@ -352,55 +352,25 @@ test.describe('NEXORA Arcade keyboard controls', () => {
     await page.getByRole('button', { name: /Play demo/i }).click()
     const dialog = page.getByRole('dialog', { name: 'Neon Memory' })
     const tiles = dialog.getByRole('button', { name: /^Tile [1-9]$/ })
-
-    await dialog.getByRole('button', { name: 'Start round' }).click()
-    const firstTile = await expect.poll(async () => {
+    const flashingTile = async () => {
       for (let i = 0; i < 9; i += 1) {
         if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
       }
       return -1
-    }, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
-
-    let first = -1
-    for (let i = 0; i < 9; i += 1) {
-      if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') {
-        first = i
-        break
-      }
     }
+
+    await dialog.getByRole('button', { name: 'Start round' }).click()
+    await expect.poll(flashingTile, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
+    const first = await flashingTile()
     expect(first).toBeGreaterThanOrEqual(0)
     await expect(tiles.nth(0)).toBeEnabled({ timeout: 5_000 })
     await tiles.nth(first).click()
     await expect(dialog.getByText('Round 2 / 10 · 0 / 2 correct tiles')).toBeVisible()
 
-    await expect.poll(async () => {
-      for (let i = 0; i < 9; i += 1) {
-        if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
-      }
-      return -1
-    }, { timeout: 5_000 }).toBe(first)
-
-    await expect.poll(async () => {
-      for (let i = 0; i < 9; i += 1) {
-        if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
-      }
-      return -1
-    }, { timeout: 5_000 }).not.toBe(-1)
-
-    let second = -1
-    await expect.poll(async () => {
-      for (let i = 0; i < 9; i += 1) {
-        if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') return i
-      }
-      return -1
-    }, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
-    for (let i = 0; i < 9; i += 1) {
-      if (await tiles.nth(i).getAttribute('data-memory-flash') === 'true') {
-        second = i
-        break
-      }
-    }
-    expect(second).not.toBe(first)
+    await expect.poll(flashingTile, { timeout: 5_000 }).toBe(first)
+    await expect.poll(flashingTile, { timeout: 2_000 }).toBe(-1)
+    const second = await expect.poll(flashingTile, { timeout: 5_000 }).toBeGreaterThanOrEqual(0)
+    expect(await flashingTile()).not.toBe(first)
   })
 
 })
